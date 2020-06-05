@@ -1,0 +1,34 @@
+<html>
+	<head>
+		<meta charset="utf-8"/>
+		<script src="webgl-debug.js"></script>
+		<script>
+		function logGLCall(functionName, args) {
+			   console.log("gl." + functionName + "(" +
+			      WebGLDebugUtils.glFunctionArgsToString(functionName, args) + ")");
+			}
+		</script>
+		<script src="wasm_exec.js"></script>
+		<script>
+			const go = new Go();
+			WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject).then((result) => {
+				go.run(result.instance);
+			});
+		</script>
+		<style>
+			body {
+				background: gray;
+				padding: 0;
+				margin: 0;
+			}
+			canvas {
+				background: white;
+				width: 100%;
+				height: 100%;
+			}
+		</style>
+	</head>
+	<body>
+    <canvas id="gocanvas"></canvas>
+  </body>
+</html>
