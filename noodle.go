@@ -129,17 +129,18 @@ func Initialize(application Application) {
 	ModelMatrix := gl.Call("getUniformLocation", shaderProgram, "Mmatrix")
 
 	//gl.Call("bindBuffer", glTypes.ArrayBuffer, vertexBuffer)
-	gl.BindBuffer(gl.GLEnum.ArrayBuffer, vertexBuffer)
+	//	gl.BindBuffer(gl.GLEnum.ArrayBuffer, vertexBuffer)
+	gl.context.Call("bindBuffer", ARRAY_BUFFER, vertexBuffer)
 	position := gl.Call("getAttribLocation", shaderProgram, "position")
 	gl.Call("vertexAttribPointer", position, 3, glTypes.Float, false, 0, 0)
 	gl.Call("enableVertexAttribArray", position)
 
-	gl.Call("bindBuffer", glTypes.ArrayBuffer, colorBuffer)
+	gl.BindBuffer(gl.GLEnum.ArrayBuffer, colorBuffer)
 	color := gl.Call("getAttribLocation", shaderProgram, "color")
 	gl.Call("vertexAttribPointer", color, 3, glTypes.Float, false, 0, 0)
 	gl.Call("enableVertexAttribArray", color)
 
-	gl.Call("useProgram", shaderProgram)
+	gl.UseProgram(shaderProgram)
 
 	// Set WeebGL properties
 	gl.Call("clearColor", 0.5, 0.5, 0.5, 0.9) // Color the screen is cleared to

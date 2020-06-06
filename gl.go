@@ -9,6 +9,8 @@ type WebGLBuffer = js.Value
 type WebGLShader = js.Value
 type WebGLShaderProgram = js.Value
 
+const PP = 0x001
+
 //GL is a helper class that wraps webgl
 type GL struct {
 	GLEnum  *GLEnumCollection
@@ -81,6 +83,11 @@ func (gl *GL) AttachShader(shaderProgram WebGLShaderProgram, shader WebGLShader)
 //LinkProgram inks a given WebGLProgram, completing the process of preparing the GPU code for the program's fragment and vertex shaders.
 func (gl *GL) LinkProgram(shaderProgram WebGLShaderProgram) {
 	gl.context.Call("linkProgram", shaderProgram)
+}
+
+//UseProgram tells webgl to start using this program
+func (gl *GL) UseProgram(shaderProgram WebGLShaderProgram) {
+	gl.context.Call("useProgram", shaderProgram)
 }
 
 //NewProgram creates a new webgl shader program with some shaders and links it
