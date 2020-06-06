@@ -17,6 +17,7 @@ func NewTriangleRenderer() *TriangleRenderer {
 		-0.5, -0.5, 0,
 		0.5, -0.5, 0,
 	}
+
 	return renderer
 }
 
@@ -25,6 +26,7 @@ func (renderer *TriangleRenderer) Setup() {
 }
 */
 /*
+
 type CubeRenderer struct {
 	verticesNative []float32
 	colorsNative   []float32

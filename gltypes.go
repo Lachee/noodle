@@ -21,6 +21,12 @@ type GLTypes struct {
 	LineLoop           js.Value
 }
 
+func newGLTypes(context js.Value) *GLTypes {
+	var gltypes = &GLTypes{}
+	gltypes.new(context)
+	return gltypes
+}
+
 // New grabs the WebGL bindings from a GL context.
 func (types *GLTypes) new(gl js.Value) {
 	types.StaticDraw = gl.Get("STATIC_DRAW")
