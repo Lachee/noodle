@@ -2,44 +2,51 @@
 //Borrowed from https://github.com/bobcob7/wasm-rotating-cube/blob/master/gltypes/gltypes.go
 package noodle
 
-import "syscall/js"
+import (
+	"log"
+	"syscall/js"
+)
+
+//GLTypesValue is a value in the GLTypes
+type GLEnum = js.Value
 
 // GLTypes provides WebGL bindings.
-type GLTypes struct {
-	StaticDraw         js.Value
-	ArrayBuffer        js.Value
-	ElementArrayBuffer js.Value
-	VertexShader       js.Value
-	FragmentShader     js.Value
-	Float              js.Value
-	DepthTest          js.Value
-	ColorBufferBit     js.Value
-	DepthBufferBit     js.Value
-	Triangles          js.Value
-	UnsignedShort      js.Value
-	LEqual             js.Value
-	LineLoop           js.Value
+type GLEnumCollection struct {
+	StaticDraw         GLEnum
+	ArrayBuffer        GLEnum
+	ElementArrayBuffer GLEnum
+	VertexShader       GLEnum
+	FragmentShader     GLEnum
+	Float              GLEnum
+	DepthTest          GLEnum
+	ColorBufferBit     GLEnum
+	DepthBufferBit     GLEnum
+	Triangles          GLEnum
+	UnsignedShort      GLEnum
+	LEqual             GLEnum
+	LineLoop           GLEnum
 }
 
-func newGLTypes(context js.Value) *GLTypes {
-	var gltypes = &GLTypes{}
-	gltypes.new(context)
+func newGLEnumCollection(context js.Value) *GLEnumCollection {
+	log.Println("Create Collection")
+	var gltypes = &GLEnumCollection{}
+	gltypes.find(context)
 	return gltypes
 }
 
 // New grabs the WebGL bindings from a GL context.
-func (types *GLTypes) new(gl js.Value) {
-	types.StaticDraw = gl.Get("STATIC_DRAW")
-	types.ArrayBuffer = gl.Get("ARRAY_BUFFER")
-	types.ElementArrayBuffer = gl.Get("ELEMENT_ARRAY_BUFFER")
-	types.VertexShader = gl.Get("VERTEX_SHADER")
-	types.FragmentShader = gl.Get("FRAGMENT_SHADER")
-	types.Float = gl.Get("FLOAT")
-	types.DepthTest = gl.Get("DEPTH_TEST")
-	types.ColorBufferBit = gl.Get("COLOR_BUFFER_BIT")
-	types.Triangles = gl.Get("TRIANGLES")
-	types.UnsignedShort = gl.Get("UNSIGNED_SHORT")
-	types.LEqual = gl.Get("LEQUAL")
-	types.DepthBufferBit = gl.Get("DEPTH_BUFFER_BIT")
-	types.LineLoop = gl.Get("LINE_LOOP")
+func (collection *GLEnumCollection) find(gl js.Value) {
+	collection.StaticDraw = GLEnum(gl.Get("STATIC_DRAW"))
+	collection.ArrayBuffer = GLEnum(gl.Get("ARRAY_BUFFER"))
+	collection.ElementArrayBuffer = GLEnum(gl.Get("ELEMENT_ARRAY_BUFFER"))
+	collection.VertexShader = GLEnum(gl.Get("VERTEX_SHADER"))
+	collection.FragmentShader = GLEnum(gl.Get("FRAGMENT_SHADER"))
+	collection.Float = GLEnum(gl.Get("FLOAT"))
+	collection.DepthTest = GLEnum(gl.Get("DEPTH_TEST"))
+	collection.ColorBufferBit = GLEnum(gl.Get("COLOR_BUFFER_BIT"))
+	collection.Triangles = GLEnum(gl.Get("TRIANGLES"))
+	collection.UnsignedShort = GLEnum(gl.Get("UNSIGNED_SHORT"))
+	collection.LEqual = GLEnum(gl.Get("LEQUAL"))
+	collection.DepthBufferBit = GLEnum(gl.Get("DEPTH_BUFFER_BIT"))
+	collection.LineLoop = GLEnum(gl.Get("LINE_LOOP"))
 }

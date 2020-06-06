@@ -1,6 +1,16 @@
 // +build js,wasm
 package noodle
 
+/* Here is a list of interesting Readings
+https://blog.scottlogic.com/2019/11/18/drawing-lines-with-webgl.html - Line Rendering
+https://github.com/davidwparker/programmingtil-webgl/tree/master/0016-single-line - More Lines
+https://mattdesl.svbtle.com/drawing-lines-is-hard - Even more lines
+https://github.com/mattdesl/webgl-lines/blob/master/expanded/frag.glsl - A line shader
+https://stdiopt.github.io/gowasm-experiments/rainbow-mouse/ - Example Go WASM
+https://www.gamedev.net/forums/topic/696879-glsl-9-slicing/ - 9 Slice
+https://github.com/Lachee/engi/blob/master/batch.go - Engi Batch Renderer
+*/
+
 import (
 	"syscall/js"
 	"unsafe"
@@ -9,8 +19,8 @@ import (
 var (
 	document        js.Value
 	canvas          js.Value
-	gl              js.Value
-	glTypes         GLTypes
+	gl              *GL
+	glTypes         *GLEnumCollection
 	frameRenderFunc js.Func
 	input           *Input
 	app             Application
@@ -38,17 +48,18 @@ func Initialize(application Application) {
 	done := make(chan struct{}, 0)
 
 	//Get the GL context
-	gl = canvas.Call("getContext", "webgl")
-	if gl.IsUndefined() {
-		gl = canvas.Call("getContext", "experimental-webgl")
+	context := canvas.Call("getContext", "webgl")
+	if context.IsUndefined() {
+		context = canvas.Call("getContext", "experimental-webgl")
 	}
-	if gl.IsUndefined() {
+	if context.IsUndefined() {
 		js.Global().Call("alert", "browser might not support webgl")
 		return
 	}
 
-	//Prepare the GL Types
-	glTypes.new(gl)
+	//Create a new GL instance
+	gl = newGL(context)
+	glTypes = newGLEnumCollection(context)
 
 	//Record canvas events
 	onMouseChangeEvent := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
@@ -89,44 +100,36 @@ func Initialize(application Application) {
 
 	//=== BUFFER
 	// Create vertex buffer
-	vertexBuffer := gl.Call("createBuffer")
-	gl.Call("bindBuffer", glTypes.ArrayBuffer, vertexBuffer)
-	gl.Call("bufferData", glTypes.ArrayBuffer, vertices, glTypes.StaticDraw)
+	vertexBuffer := gl.NewBuffer(gl.GLEnum.ArrayBuffer, vertices, gl.GLEnum.StaticDraw)
 
 	// Create color buffer
-	colorBuffer := gl.Call("createBuffer")
-	gl.Call("bindBuffer", glTypes.ArrayBuffer, colorBuffer)
-	gl.Call("bufferData", glTypes.ArrayBuffer, colors, glTypes.StaticDraw)
+	colorBuffer := gl.NewBuffer(gl.GLEnum.ArrayBuffer, colors, gl.GLEnum.StaticDraw)
 
 	// Create index buffer
-	indexBuffer := gl.Call("createBuffer")
-	gl.Call("bindBuffer", glTypes.ElementArrayBuffer, indexBuffer)
-	gl.Call("bufferData", glTypes.ElementArrayBuffer, indices, glTypes.StaticDraw)
+	indexBuffer := gl.NewBuffer(gl.GLEnum.ElementArrayBuffer, indices, gl.GLEnum.StaticDraw)
 
 	//=== SHADER
 	// Create a vertex shader object
-	vertShader := gl.Call("createShader", glTypes.VertexShader)
-	gl.Call("shaderSource", vertShader, vertShaderCode)
-	gl.Call("compileShader", vertShader)
+	vertShader := gl.NewShader(gl.GLEnum.VertexShader, vertShaderCode)
 
 	// Create fragment shader object
-	fragShader := gl.Call("createShader", glTypes.FragmentShader)
-	gl.Call("shaderSource", fragShader, fragShaderCode)
-	gl.Call("compileShader", fragShader)
+	fragShader := gl.NewShader(gl.GLEnum.FragmentShader, fragShaderCode)
 
 	// Create a shader program object to store
 	// the combined shader program
-	shaderProgram := gl.Call("createProgram")
-	gl.Call("attachShader", shaderProgram, vertShader)
-	gl.Call("attachShader", shaderProgram, fragShader)
-	gl.Call("linkProgram", shaderProgram)
+	//shaderProgram := gl.Call("createProgram")
+	//gl.Call("attachShader", shaderProgram, vertShader)
+	//gl.Call("attachShader", shaderProgram, fragShader)
+	//gl.Call("linkProgram", shaderProgram)
+	shaderProgram := gl.NewProgram([]WebGLShader{vertShader, fragShader})
 
 	// Associate attributes to vertex shader
 	PositionMatrix := gl.Call("getUniformLocation", shaderProgram, "Pmatrix")
 	ViewMatrix := gl.Call("getUniformLocation", shaderProgram, "Vmatrix")
 	ModelMatrix := gl.Call("getUniformLocation", shaderProgram, "Mmatrix")
 
-	gl.Call("bindBuffer", glTypes.ArrayBuffer, vertexBuffer)
+	//gl.Call("bindBuffer", glTypes.ArrayBuffer, vertexBuffer)
+	gl.BindBuffer(gl.GLEnum.ArrayBuffer, vertexBuffer)
 	position := gl.Call("getAttribLocation", shaderProgram, "position")
 	gl.Call("vertexAttribPointer", position, 3, glTypes.Float, false, 0, 0)
 	gl.Call("enableVertexAttribArray", position)
