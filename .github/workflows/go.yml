@@ -24,6 +24,8 @@ jobs:
 
     - name: Get dependencies
       run: |
+        export GOOS=js
+        export GOARCH=wasm
         go get -v -t -d ./...
         if [ -f Gopkg.toml ]; then
             curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
@@ -33,7 +35,8 @@ jobs:
     - name: Build
       run: |
         cd example
-        build.sh
+        chmod 777 ./build.sh
+        ./build.sh
 
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v2
