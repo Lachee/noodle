@@ -551,7 +551,7 @@ func (m Matrix) Decompose() []float32 {
 	}
 }
 
-//DecomposePointer is an unsafe Decompose where no values are copied and a reference of the float32 array is returned
-func (matrix *Matrix) DecomposePointer() *[16]float32 {
-	return (*[16]float32)(unsafe.Pointer(matrix))
+//DecomposePointer is an unsafe Decompose. Instead of the values being copied, a pointer to the matrix is cast into a float array pointer and returned.
+func (m *Matrix) DecomposePointer() *[16]float32 {
+	return (*[16]float32)(unsafe.Pointer(m))
 }

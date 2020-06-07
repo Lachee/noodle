@@ -13,7 +13,6 @@ https://github.com/Lachee/engi/blob/master/batch.go - Engi Batch Renderer
 
 import (
 	"syscall/js"
-	"unsafe"
 )
 
 var (
@@ -122,57 +121,52 @@ func Initialize(application Application) {
 	shaderProgram := gl.NewProgram([]WebGLShader{vertShader, fragShader})
 
 	// Associate attributes to vertex shader
-	PositionMatrix := gl.Call("getUniformLocation", shaderProgram, "Pmatrix")
-	ViewMatrix := gl.Call("getUniformLocation", shaderProgram, "Vmatrix")
-	ModelMatrix := gl.Call("getUniformLocation", shaderProgram, "Mmatrix")
+	PositionMatrix := gl.GetUniformLocation(shaderProgram, "Pmatrix")
+	ViewMatrix := gl.GetUniformLocation(shaderProgram, "Vmatrix")
+	ModelMatrix := gl.GetUniformLocation(shaderProgram, "Mmatrix")
 
 	//gl.Call("bindBuffer", glTypes.ArrayBuffer, vertexBuffer)
 	gl.BindBuffer(GlArrayBuffer, vertexBuffer)
-	position := gl.Call("getAttribLocation", shaderProgram, "position")
-	gl.Call("vertexAttribPointer", position, 3, GlFloat, false, 0, 0)
-	gl.Call("enableVertexAttribArray", position)
+	position := gl.GetAttribLocation(shaderProgram, "position")
+	gl.VertexAttribPointer(position, 3, GlFloat, false, 0, 0)
+	gl.EnableVertexAttribArray(position)
 
 	gl.BindBuffer(GlArrayBuffer, colorBuffer)
-	color := gl.Call("getAttribLocation", shaderProgram, "color")
-	gl.Call("vertexAttribPointer", color, 3, GlFloat, false, 0, 0)
-	gl.Call("enableVertexAttribArray", color)
+	color := gl.GetAttribLocation(shaderProgram, "color")
+	gl.VertexAttribPointer(color, 3, GlFloat, false, 0, 0)
+	gl.EnableVertexAttribArray(color)
 
 	gl.UseProgram(shaderProgram)
 
 	// Set WeebGL properties
-	gl.Call("clearColor", 0.5, 0.5, 0.5, 0.9) // Color the screen is cleared to
-	gl.Call("clearDepth", 1.0)                // Z value that is set to the Depth buffer every frame
-	gl.Call("viewport", 0, 0, width, height)  // Viewport size
-	gl.Call("depthFunc", GlLEqual)
+	gl.ClearColor(0.5, 0.5, 0.5, 0.9)
+	gl.ClearDepth(1)
+	gl.Viewport(0, 0, width, height)
+	gl.DepthFunc(GlLEqual)
+	//gl.Call("clearColor", 0.5, 0.5, 0.5, 0.9) // Color the screen is cleared to
+	//gl.Call("clearDepth", 1.0)                // Z value that is set to the Depth buffer every frame
+	//gl.Call("viewport", 0, 0, width, height)  // Viewport size
+	//gl.Call("depthFunc", GlLEqual)
 
 	//// Create Matrixes ////
 	ratio := float64(width) / float64(height)
 
 	// Generate and apply projection matrix
-	//projMatrix := mgl32.Perspective(mgl32.DegToRad(45.0), float32(ratio), 1, 100.0)
 	projMatrix := NewMatrixPerspective(45.0, ratio, 1, 100.0)
-	var projMatrixBuffer *[16]float32
-	//projMatrixBuffer = projMatrix.ToBuffer()
-	projMatrixBuffer = (*[16]float32)(unsafe.Pointer(&projMatrix))
-	typedProjMatrixBuffer := sliceToTypedArray([]float32((*projMatrixBuffer)[:]))
-	gl.Call("uniformMatrix4fv", PositionMatrix, false, typedProjMatrixBuffer)
+	gl.UniformMatrix4fv(PositionMatrix, projMatrix)
 
 	// Generate and apply view matrix
 	viewMatrix := NewMatrixLookAt(NewVector3(3.0, 3.0, 3.0), NewVector3Zero(), NewVector3Up())
-	var viewMatrixBuffer *[16]float32
-	viewMatrixBuffer = viewMatrix.DecomposePointer()
-	typedViewMatrixBuffer := sliceToTypedArray([]float32((*viewMatrixBuffer)[:]))
-	gl.Call("uniformMatrix4fv", ViewMatrix, false, typedViewMatrixBuffer)
+	gl.UniformMatrix4fv(ViewMatrix, viewMatrix)
 
 	//// Drawing the Cube ////
-	movMatrix := NewMatrixIdentity() // mgl32.Ident4()
-	//movMatrix := mgl32.Ident4()
+	movMatrix := NewMatrixIdentity()
 	var renderFrame js.Func
 	var tmark float32
 	var rotation = float32(0)
 
 	// Bind to element array for draw function
-	gl.Call("bindBuffer", GlElementArrayBuffer, indexBuffer)
+	gl.BindBuffer(GlElementArrayBuffer, indexBuffer)
 
 	renderFrame = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		// Calculate rotation rate
@@ -181,31 +175,18 @@ func Initialize(application Application) {
 		tmark = now
 		rotation = rotation + float32(tdiff)/500
 
-		var modelMatrixBuffer *[16]float32
-
 		// Do new model matrix calculations
 		movMatrix = NewMatrixRotate(NewVector3Up(), 0.5*rotation)
 		movMatrix = movMatrix.Multiply(NewMatrixRotate(NewVector3Forward(), 0.3*rotation))
 		movMatrix = movMatrix.Multiply(NewMatrixRotate(NewVector3Right(), 0.2*rotation))
-		modelMatrixBuffer = movMatrix.DecomposePointer()
-
-		//movMatrix = mgl32.HomogRotate3DX(0.5 * rotation)
-		//movMatrix = movMatrix.Mul4(mgl32.HomogRotate3DY(0.3 * rotation))
-		//movMatrix = movMatrix.Mul4(mgl32.HomogRotate3DZ(0.2 * rotation))
-		//modelMatrixBuffer = (*[16]float32)(unsafe.Pointer(&movMatrix))
-
-		typedModelMatrixBuffer := sliceToTypedArray([]float32((*modelMatrixBuffer)[:]))
-
-		// Apply the model matrix
-		gl.Call("uniformMatrix4fv", ModelMatrix, false, typedModelMatrixBuffer)
+		gl.UniformMatrix4fv(ModelMatrix, movMatrix)
 
 		// Clear the screen
-		gl.Call("enable", GlDepthTest)
-		gl.Call("clear", GlColorBufferBit)
-		gl.Call("clear", GlDepthBufferBit)
+		gl.Enable(GlDepthTest)
+		gl.Clear(GlColorBufferBit | GlDepthBufferBit)
 
 		// Draw the cube
-		gl.Call("drawElements", GlTriangles, len(indicesNative), GlUnsignedShort, 0)
+		gl.DrawElements(GlTriangles, len(indicesNative), GlUnsignedShort, 0)
 
 		// Call next frame
 		js.Global().Call("requestAnimationFrame", renderFrame)

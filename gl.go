@@ -8,6 +8,7 @@ import (
 type WebGLBuffer = js.Value
 type WebGLShader = js.Value
 type WebGLShaderProgram = js.Value
+type WebGLUniformLocation = js.Value
 
 //GL is a helper class that wraps webgl
 type GL struct {
@@ -94,6 +95,73 @@ func (gl *GL) NewProgram(shaders []WebGLShader) WebGLShaderProgram {
 	}
 	gl.LinkProgram(program)
 	return program
+}
+
+//GetUniformLocation returns the location of a specific uniform variable which is part of a given WebGLProgram.
+func (gl *GL) GetUniformLocation(shaderProgram WebGLShaderProgram, location string) WebGLUniformLocation {
+	return gl.context.Call("getUniformLocation", shaderProgram, location)
+}
+
+//GetAttribLocation gets a location of an attribute
+func (gl *GL) GetAttribLocation(shaderProgram WebGLShaderProgram, attribute string) int {
+	return gl.context.Call("getAttribLocation", shaderProgram, attribute).Int()
+}
+
+//VertexAttribPointer binds the buffer currently bound to gl.ARRAY_BUFFER to a generic vertex attribute of the current vertex buffer object and specifies its layout.
+func (gl *GL) VertexAttribPointer(position int, size int, valueType GLEnum, normalized bool, stride int, offset int) {
+	gl.context.Call("vertexAttribPointer", position, size, valueType, normalized, stride, offset)
+}
+
+//EnableVertexAttribArray turns on the generic vertex attribute array at the specified index into the list of attribute arrays.
+func (gl *GL) EnableVertexAttribArray(position int) {
+	gl.context.Call("enableVertexAttribArray", position)
+}
+
+//ClearColor sets the colour the screen will be cleared to
+func (gl *GL) ClearColor(r, g, b, a float64) {
+	gl.context.Call("clearColor", float32(r), float32(g), float32(b), float32(a))
+}
+
+//ClearDepth sets the z value that is set to the depth buffer every frame
+func (gl *GL) ClearDepth(depth float64) {
+	gl.context.Call("clearDepth", float32(depth))
+}
+
+//Viewport sets the viewport, which specifies the affine transformation of x and y from normalized device coordinates to window coordinates.
+func (gl *GL) Viewport(x, y, width, height int) {
+	gl.context.Call("viewport", x, y, width, height)
+}
+
+//DepthFunc specifies a function that compares incoming pixel depth to the current depth buffer value.
+func (gl *GL) DepthFunc(function GLEnum) {
+	gl.context.Call("depthFunc", function)
+}
+
+//UniformMatrix4fv specify matrix values for uniform variables.
+func (gl *GL) UniformMatrix4fv(location WebGLUniformLocation, matrix Matrix) {
+	buffer := matrix.DecomposePointer()
+	typedBuffer := sliceToTypedArray([]float32((*buffer)[:]))
+	gl.Call("uniformMatrix4fv", location, false, typedBuffer)
+}
+
+//Enable enables a option
+func (gl *GL) Enable(option GLEnum) {
+	gl.context.Call("enable", option)
+}
+
+//Disable disables a option
+func (gl *GL) Disable(option GLEnum) {
+	gl.context.Call("disable", option)
+}
+
+//Clear empties the buffers
+func (gl *GL) Clear(option GLEnum) {
+	gl.context.Call("clear", option)
+}
+
+//DrawElements renders primitives from array data.
+func (gl *GL) DrawElements(mode GLEnum, count int, valueType GLEnum, offset int) {
+	gl.context.Call("drawElements", mode, count, valueType, offset)
 }
 
 //Call the internal context and reutrns the JS value
