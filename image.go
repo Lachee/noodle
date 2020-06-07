@@ -56,3 +56,52 @@ func (i *Image) Width() int {
 func (i *Image) Height() int {
 	return i.data.Get("height").Int()
 }
+
+//IsPowerOf2 checks if the image is a square power
+func (i *Image) IsPowerOf2() bool {
+	w := i.Width()
+	h := i.Height()
+	return ((w & (w - 1)) == 0) && ((h & (h - 1)) == 0)
+}
+
+type Texture struct {
+	target  GLEnum
+	level   int
+	format  GLEnum
+	texture WebGLTexture
+}
+
+//NewTexture a new Texture from the image
+func NewTexture(image *Image) *Texture {
+	webglTexture := GL.CreateTexture()
+	tex := &Texture{
+		target:  GlTexture2D,
+		level:   0,
+		format:  GlRGBA,
+		texture: webglTexture,
+	}
+
+	tex.SetImage(image)
+	return tex
+}
+
+//Data gets the internal JS reference
+func (tex *Texture) Data() WebGLTexture {
+	return tex.texture
+}
+
+//SetImage sets the texture's image
+func (tex *Texture) SetImage(image *Image) {
+	GL.BindTexture(tex.target, tex.texture)
+	GL.TexImage2D(tex.target, tex.level, tex.format, tex.format, GlUnsignedByte, image.Data())
+
+	//Generate mips
+	if image.IsPowerOf2() {
+		GL.GenerateMipmap(tex.target)
+	} else {
+		//Turn of mips, not square
+		GL.TexParameteri(tex.target, GlTextureWrapS, GlClampToEdge)
+		GL.TexParameteri(tex.target, GlTextureWrapT, GlClampToEdge)
+		GL.TexParameteri(tex.target, GlTextureMinFilter, GlLinear)
+	}
+}

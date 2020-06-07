@@ -9,6 +9,7 @@ type WebGLBuffer = js.Value
 type WebGLShader = js.Value
 type WebGLShaderProgram = js.Value
 type WebGLUniformLocation = js.Value
+type WebGLTexture = js.Value
 
 //GL is a helper class that wraps webWebGL
 type WebGL struct {
@@ -173,6 +174,36 @@ func (gl *WebGL) Clear(option GLEnum) {
 //DrawElements renders primitives from array data.
 func (gl *WebGL) DrawElements(mode GLEnum, count int, valueType GLEnum, offset int) {
 	gl.context.Call("drawElements", mode, count, valueType, offset)
+}
+
+//CreateTexture creates a new texture on the GPU
+func (gl *WebGL) CreateTexture() WebGLTexture {
+	return gl.context.Call("createTexture")
+}
+
+//BindTexture binds a given WebGLTexture to a target (binding point).
+func (gl *WebGL) BindTexture(target GLEnum, texture WebGLTexture) {
+	gl.context.Call("bindTexture", target, texture)
+}
+
+//TexImage2D specifies a 2D image
+func (gl *WebGL) TexImage2D(target GLEnum, level int, internalFormat GLEnum, format GLEnum, texelType GLEnum, pixels interface{}) {
+	gl.context.Call("texImage2D", target, level, internalFormat, format, texelType, pixels)
+}
+
+//GenerateMipmap creats the Mipmap for a texture
+func (gl *WebGL) GenerateMipmap(target GLEnum) {
+	gl.context.Call("generateMipmap", target)
+}
+
+//TexParameteri set texture parameters
+func (gl *WebGL) TexParameteri(target GLEnum, param GLEnum, value int) {
+	gl.context.Call("texParameteri", target, param, value)
+}
+
+//TexParameterf set texture parameters
+func (gl *WebGL) TexParameterf(target GLEnum, param GLEnum, value float64) {
+	gl.context.Call("texParameterf", target, param, value)
 }
 
 //Call the internal context and reutrns the JS value

@@ -8,8 +8,8 @@ import (
 
 const batchSize = 10000
 
-type Sprite interface {
-	Image() *Image
+type TextureSlice interface {
+	Texture() *Texture
 	Width() float64
 	Height() float64
 	View() (float64, float64, float64, float64)
@@ -27,8 +27,8 @@ type Batch struct {
 	vertexBuffer WebGLBuffer
 	indexBuffer  WebGLBuffer
 
-	drawing   bool
-	lastImage *Image
+	drawing     bool
+	lastTexture *Texture
 }
 
 func NewBatch() *Batch {
@@ -56,6 +56,7 @@ func NewBatch() *Batch {
 	}
 
 	//Create the buffers
+
 	batch.vertexBuffer = GL.NewBuffer(GlArrayBuffer, batch.vertices, GlDynamicDraw)
 	batch.indexBuffer = GL.NewBuffer(GlElementArrayBuffer, batch.indices, GlStaticDraw)
 
@@ -88,7 +89,7 @@ func (b *Batch) End() {
 	}
 
 	b.drawing = false
-	b.lastImage = nil
+	b.lastTexture = nil
 }
 
 /*
