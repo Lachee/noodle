@@ -9,17 +9,13 @@ type WebGLBuffer = js.Value
 type WebGLShader = js.Value
 type WebGLShaderProgram = js.Value
 
-const PP = 0x001
-
 //GL is a helper class that wraps webgl
 type GL struct {
-	GLEnum  *GLEnumCollection
 	context js.Value
 }
 
 func newGL(context js.Value) *GL {
 	return &GL{
-		GLEnum:  newGLEnumCollection(context),
 		context: context,
 	}
 }

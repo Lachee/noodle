@@ -20,7 +20,6 @@ var (
 	document        js.Value
 	canvas          js.Value
 	gl              *GL
-	glTypes         *GLEnumCollection
 	frameRenderFunc js.Func
 	input           *Input
 	app             Application
@@ -59,7 +58,6 @@ func Initialize(application Application) {
 
 	//Create a new GL instance
 	gl = newGL(context)
-	glTypes = newGLEnumCollection(context)
 
 	//Record canvas events
 	onMouseChangeEvent := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
