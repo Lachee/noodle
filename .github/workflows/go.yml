@@ -35,6 +35,7 @@ jobs:
     - name: Build
       run: |
         cd example
+        chmod 777 ./build.sh
         ./build.sh
 
     - name: Upload a Build Artifact
