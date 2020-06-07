@@ -186,6 +186,11 @@ func (gl *WebGL) BindTexture(target GLEnum, texture WebGLTexture) {
 	gl.context.Call("bindTexture", target, texture)
 }
 
+//ActiveTexture tells WebGL what texture state will be now modified
+func (gl *WebGL) ActiveTexture(target GLEnum) {
+	gl.context.Call("activeTexture", target)
+}
+
 //TexImage2D specifies a 2D image
 func (gl *WebGL) TexImage2D(target GLEnum, level int, internalFormat GLEnum, format GLEnum, texelType GLEnum, pixels interface{}) {
 	gl.context.Call("texImage2D", target, level, internalFormat, format, texelType, pixels)
@@ -204,6 +209,29 @@ func (gl *WebGL) TexParameteri(target GLEnum, param GLEnum, value int) {
 //TexParameterf set texture parameters
 func (gl *WebGL) TexParameterf(target GLEnum, param GLEnum, value float64) {
 	gl.context.Call("texParameterf", target, param, value)
+}
+
+//=== Uniform Setting
+//Uniform1f specifies values of uniform variables
+func (gl *WebGL) Uniform1f(location WebGLUniformLocation, value float64) {
+	gl.context.Call("uniform1f", location, value)
+}
+
+//Uniform1fv specifies values of uniform variables
+func (gl *WebGL) Uniform1fv(location WebGLUniformLocation, value []float64) {
+	slice := sliceToTypedArray(value)
+	gl.context.Call("uniform1f", location, slice)
+}
+
+//Uniform1i specifies values of uniform variables
+func (gl *WebGL) Uniform1i(location WebGLUniformLocation, value int) {
+	gl.context.Call("uniform1i", location, value)
+}
+
+//Uniform1iv specifies values of uniform variables
+func (gl *WebGL) Uniform1iv(location WebGLUniformLocation, value []int) {
+	slice := sliceToTypedArray(value)
+	gl.context.Call("uniform1i", location, slice)
 }
 
 //Call the internal context and reutrns the JS value

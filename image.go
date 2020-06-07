@@ -105,3 +105,8 @@ func (tex *Texture) SetImage(image *Image) {
 		GL.TexParameteri(tex.target, GlTextureMinFilter, GlLinear)
 	}
 }
+
+//Bind tells GL to use this texture
+func (tex *Texture) Bind() {
+	GL.BindTexture(tex.target, tex.texture)
+}

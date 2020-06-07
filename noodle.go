@@ -12,6 +12,7 @@ https://github.com/Lachee/engi/blob/master/batch.go - Engi Batch Renderer
 */
 
 import (
+	"log"
 	"syscall/js"
 )
 
@@ -58,6 +59,14 @@ func Initialize(application Application) {
 	//Create a new GL instance
 	GL = newWebGL(context)
 
+	//Define the texture
+	image, err := LoadImage("resources/moomin.png")
+	if err != nil {
+		log.Fatalln("Failed to load image", err)
+		return
+	}
+	texture := NewTexture(image)
+
 	//Record canvas events
 	onMouseChangeEvent := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		evt := args[0]
@@ -100,6 +109,9 @@ func Initialize(application Application) {
 	// Create index buffer
 	indexBuffer := GL.NewBuffer(GlElementArrayBuffer, indicesNative, GlStaticDraw)
 
+	// Create uv buffer
+	uvBuffer := GL.NewBuffer(GlArrayBuffer, uvNative, GlStaticDraw)
+
 	//=== SHADER
 	basicShader := LoadShader(vertShaderCode, fragShaderCode)
 
@@ -122,12 +134,14 @@ func Initialize(application Application) {
 	PositionMatrix := basicShader.GetUniformLocation("Pmatrix")
 	ViewMatrix := basicShader.GetUniformLocation("Vmatrix")
 	ModelMatrix := basicShader.GetUniformLocation("Mmatrix")
+	Sampler := basicShader.GetUniformLocation("uSampler")
 
 	//shaderProgram := basicShader.GetProgram()
 
 	//GL.Call("bindBuffer", glTypes.ArrayBuffer, vertexBuffer)
 	basicShader.BindVertexData("position", GlArrayBuffer, vertexBuffer, 3, GlFloat, false, 0, 0)
 	basicShader.BindVertexData("color", GlArrayBuffer, colorBuffer, 3, GlFloat, false, 0, 0)
+	basicShader.BindVertexData("textureCoord", GlArrayBuffer, uvBuffer, 2, GlFloat, false, 0, 0)
 	basicShader.Use()
 
 	// Set WeebGL properties
@@ -153,9 +167,15 @@ func Initialize(application Application) {
 	var tmark float32
 	var rotation = float32(0)
 
+	//Update the texture shit
+	// Activate the text0, tell the texture to bind, then tell the
+	//  sampler that it should be on 0
+	GL.ActiveTexture(GlTexture0)
+	texture.Bind()
+	GL.Uniform1i(Sampler, 0)
+
 	// Bind to element array for draw function
 	GL.BindBuffer(GlElementArrayBuffer, indexBuffer)
-
 	renderFrame = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		// Calculate rotation rate
 		now := float32(args[0].Float())
@@ -216,6 +236,14 @@ var verticesNative = []float32{
 	-1, -1, -1, -1, -1, 1, 1, -1, 1, 1, -1, -1,
 	-1, 1, -1, -1, 1, 1, 1, 1, 1, 1, 1, -1,
 }
+var uvNative = []float32{
+	0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
+	0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
+	0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
+	0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
+	0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
+	0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
+}
 var colorsNative = []float32{
 	5, 3, 7, 5, 3, 7, 5, 3, 7, 5, 3, 7,
 	1, 1, 3, 1, 1, 3, 1, 1, 3, 1, 1, 3,
@@ -232,20 +260,31 @@ var indicesNative = []uint16{
 
 const vertShaderCode = `
 attribute vec3 position;
+attribute vec2 textureCoord;
+
 uniform mat4 Pmatrix;
 uniform mat4 Vmatrix;
 uniform mat4 Mmatrix;
+
 attribute vec3 color;
+
 varying vec3 vColor;
+varying highp vec2 vTextureCoord;
+
 void main(void) {
-	gl_Position = Pmatrix*Vmatrix*Mmatrix*vec4(position, 1.);
+	gl_Position = Pmatrix * Vmatrix * Mmatrix * vec4(position, 1.);
 	vColor = color;
+	vTextureCoord = textureCoord;
 }
 `
 const fragShaderCode = `
 precision mediump float;
 varying vec3 vColor;
+
+varying highp vec2 vTextureCoord;
+uniform sampler2D uSampler;
+
 void main(void) {
-	gl_FragColor = vec4(vColor, 1.);
+	gl_FragColor = vec4(vColor, 1.) * texture2D(uSampler, vTextureCoord);
 }
 `
