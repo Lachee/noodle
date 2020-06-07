@@ -90,20 +90,15 @@ func Initialize(application Application) {
 	defer onMouseChangeEvent.Release()
 	canvas.Call("addEventListener", "mousedown", onMouseDownEvent)
 
-	// Convert buffers to JS TypedArrays
-	var colors = sliceToTypedArray(colorsNative)
-	var vertices = sliceToTypedArray(verticesNative)
-	var indices = sliceToTypedArray(indicesNative)
-
 	//=== BUFFER
 	// Create vertex buffer
-	vertexBuffer := gl.NewBuffer(GlArrayBuffer, vertices, GlStaticDraw)
+	vertexBuffer := gl.NewBuffer(GlArrayBuffer, verticesNative, GlStaticDraw)
 
 	// Create color buffer
-	colorBuffer := gl.NewBuffer(GlArrayBuffer, colors, GlStaticDraw)
+	colorBuffer := gl.NewBuffer(GlArrayBuffer, colorsNative, GlStaticDraw)
 
 	// Create index buffer
-	indexBuffer := gl.NewBuffer(GlElementArrayBuffer, indices, GlStaticDraw)
+	indexBuffer := gl.NewBuffer(GlElementArrayBuffer, indicesNative, GlStaticDraw)
 
 	//=== SHADER
 	// Create a vertex shader object
@@ -143,10 +138,6 @@ func Initialize(application Application) {
 	gl.ClearDepth(1)
 	gl.Viewport(0, 0, width, height)
 	gl.DepthFunc(GlLEqual)
-	//gl.Call("clearColor", 0.5, 0.5, 0.5, 0.9) // Color the screen is cleared to
-	//gl.Call("clearDepth", 1.0)                // Z value that is set to the Depth buffer every frame
-	//gl.Call("viewport", 0, 0, width, height)  // Viewport size
-	//gl.Call("depthFunc", GlLEqual)
 
 	//// Create Matrixes ////
 	ratio := float64(width) / float64(height)

@@ -41,7 +41,8 @@ func (gl *GL) BindBuffer(target GLEnum, buffer WebGLBuffer) {
 
 //BufferData sets the data of a buffer
 func (gl *GL) BufferData(target GLEnum, data interface{}, usage GLEnum) {
-	gl.context.Call("bufferData", target, data, usage)
+	values := sliceToTypedArray(data)
+	gl.context.Call("bufferData", target, values, usage)
 }
 
 //CreateShader creates a new WebGLShader
