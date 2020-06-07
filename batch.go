@@ -88,7 +88,7 @@ func (b *Batch) End() {
 	}
 
 	b.drawing = false
-	b.lastSource = nil
+	b.lastImage = nil
 }
 
 /*
