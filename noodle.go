@@ -16,9 +16,9 @@ import (
 )
 
 var (
+	GL              *WebGL
 	document        js.Value
 	canvas          js.Value
-	gl              *GL
 	frameRenderFunc js.Func
 	input           *Input
 	app             Application
@@ -56,7 +56,7 @@ func Initialize(application Application) {
 	}
 
 	//Create a new GL instance
-	gl = newGL(context)
+	GL = newWebGL(context)
 
 	//Record canvas events
 	onMouseChangeEvent := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
@@ -92,63 +92,60 @@ func Initialize(application Application) {
 
 	//=== BUFFER
 	// Create vertex buffer
-	vertexBuffer := gl.NewBuffer(GlArrayBuffer, verticesNative, GlStaticDraw)
+	vertexBuffer := GL.NewBuffer(GlArrayBuffer, verticesNative, GlStaticDraw)
 
 	// Create color buffer
-	colorBuffer := gl.NewBuffer(GlArrayBuffer, colorsNative, GlStaticDraw)
+	colorBuffer := GL.NewBuffer(GlArrayBuffer, colorsNative, GlStaticDraw)
 
 	// Create index buffer
-	indexBuffer := gl.NewBuffer(GlElementArrayBuffer, indicesNative, GlStaticDraw)
+	indexBuffer := GL.NewBuffer(GlElementArrayBuffer, indicesNative, GlStaticDraw)
 
 	//=== SHADER
-	// Create a vertex shader object
-	vertShader := gl.NewShader(GlVertexShader, vertShaderCode)
+	basicShader := LoadShader(vertShaderCode, fragShaderCode)
 
-	// Create fragment shader object
-	fragShader := gl.NewShader(GlFragmentShader, fragShaderCode)
+	/*
+		// Create a vertex shader object
+		vertShader := GL.NewShader(GlVertexShader, vertShaderCode)
+
+		// Create fragment shader object
+		fragShader := GL.NewShader(GlFragmentShader, fragShaderCode)
+	*/
 
 	// Create a shader program object to store
 	// the combined shader program
-	//shaderProgram := gl.Call("createProgram")
-	//gl.Call("attachShader", shaderProgram, vertShader)
-	//gl.Call("attachShader", shaderProgram, fragShader)
-	//gl.Call("linkProgram", shaderProgram)
-	shaderProgram := gl.NewProgram([]WebGLShader{vertShader, fragShader})
+	//shaderProgram := GL.NewProgram([]WebGLShader{vertShader, fragShader})
 
 	// Associate attributes to vertex shader
-	PositionMatrix := gl.GetUniformLocation(shaderProgram, "Pmatrix")
-	ViewMatrix := gl.GetUniformLocation(shaderProgram, "Vmatrix")
-	ModelMatrix := gl.GetUniformLocation(shaderProgram, "Mmatrix")
+	//PositionMatrix := GL.GetUniformLocation(shaderProgram, "Pmatrix")
+	//ViewMatrix := GL.GetUniformLocation(shaderProgram, "Vmatrix")
+	//ModelMatrix := GL.GetUniformLocation(shaderProgram, "Mmatrix")
+	PositionMatrix := basicShader.GetUniformLocation("Pmatrix")
+	ViewMatrix := basicShader.GetUniformLocation("Vmatrix")
+	ModelMatrix := basicShader.GetUniformLocation("Mmatrix")
 
-	//gl.Call("bindBuffer", glTypes.ArrayBuffer, vertexBuffer)
-	gl.BindBuffer(GlArrayBuffer, vertexBuffer)
-	position := gl.GetAttribLocation(shaderProgram, "position")
-	gl.VertexAttribPointer(position, 3, GlFloat, false, 0, 0)
-	gl.EnableVertexAttribArray(position)
+	//shaderProgram := basicShader.GetProgram()
 
-	gl.BindBuffer(GlArrayBuffer, colorBuffer)
-	color := gl.GetAttribLocation(shaderProgram, "color")
-	gl.VertexAttribPointer(color, 3, GlFloat, false, 0, 0)
-	gl.EnableVertexAttribArray(color)
-
-	gl.UseProgram(shaderProgram)
+	//GL.Call("bindBuffer", glTypes.ArrayBuffer, vertexBuffer)
+	basicShader.BindVertexData("position", GlArrayBuffer, vertexBuffer, 3, GlFloat, false, 0, 0)
+	basicShader.BindVertexData("color", GlArrayBuffer, colorBuffer, 3, GlFloat, false, 0, 0)
+	basicShader.Use()
 
 	// Set WeebGL properties
-	gl.ClearColor(0.5, 0.5, 0.5, 0.9)
-	gl.ClearDepth(1)
-	gl.Viewport(0, 0, width, height)
-	gl.DepthFunc(GlLEqual)
+	GL.ClearColor(0.5, 0.5, 0.5, 0.9)
+	GL.ClearDepth(1)
+	GL.Viewport(0, 0, width, height)
+	GL.DepthFunc(GlLEqual)
 
 	//// Create Matrixes ////
 	ratio := float64(width) / float64(height)
 
 	// Generate and apply projection matrix
 	projMatrix := NewMatrixPerspective(45.0, ratio, 1, 100.0)
-	gl.UniformMatrix4fv(PositionMatrix, projMatrix)
+	GL.UniformMatrix4fv(PositionMatrix, projMatrix)
 
 	// Generate and apply view matrix
 	viewMatrix := NewMatrixLookAt(NewVector3(3.0, 3.0, 3.0), NewVector3Zero(), NewVector3Up())
-	gl.UniformMatrix4fv(ViewMatrix, viewMatrix)
+	GL.UniformMatrix4fv(ViewMatrix, viewMatrix)
 
 	//// Drawing the Cube ////
 	movMatrix := NewMatrixIdentity()
@@ -157,7 +154,7 @@ func Initialize(application Application) {
 	var rotation = float32(0)
 
 	// Bind to element array for draw function
-	gl.BindBuffer(GlElementArrayBuffer, indexBuffer)
+	GL.BindBuffer(GlElementArrayBuffer, indexBuffer)
 
 	renderFrame = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		// Calculate rotation rate
@@ -170,14 +167,14 @@ func Initialize(application Application) {
 		movMatrix = NewMatrixRotate(NewVector3Up(), 0.5*rotation)
 		movMatrix = movMatrix.Multiply(NewMatrixRotate(NewVector3Forward(), 0.3*rotation))
 		movMatrix = movMatrix.Multiply(NewMatrixRotate(NewVector3Right(), 0.2*rotation))
-		gl.UniformMatrix4fv(ModelMatrix, movMatrix)
+		GL.UniformMatrix4fv(ModelMatrix, movMatrix)
 
 		// Clear the screen
-		gl.Enable(GlDepthTest)
-		gl.Clear(GlColorBufferBit | GlDepthBufferBit)
+		GL.Enable(GlDepthTest)
+		GL.Clear(GlColorBufferBit | GlDepthBufferBit)
 
 		// Draw the cube
-		gl.DrawElements(GlTriangles, len(indicesNative), GlUnsignedShort, 0)
+		GL.DrawElements(GlTriangles, len(indicesNative), GlUnsignedShort, 0)
 
 		// Call next frame
 		js.Global().Call("requestAnimationFrame", renderFrame)
