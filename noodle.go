@@ -100,20 +100,20 @@ func Initialize(application Application) {
 
 	//=== BUFFER
 	// Create vertex buffer
-	vertexBuffer := gl.NewBuffer(gl.GLEnum.ArrayBuffer, vertices, gl.GLEnum.StaticDraw)
+	vertexBuffer := gl.NewBuffer(GlArrayBuffer, vertices, GlStaticDraw)
 
 	// Create color buffer
-	colorBuffer := gl.NewBuffer(gl.GLEnum.ArrayBuffer, colors, gl.GLEnum.StaticDraw)
+	colorBuffer := gl.NewBuffer(GlArrayBuffer, colors, GlStaticDraw)
 
 	// Create index buffer
-	indexBuffer := gl.NewBuffer(gl.GLEnum.ElementArrayBuffer, indices, gl.GLEnum.StaticDraw)
+	indexBuffer := gl.NewBuffer(GlElementArrayBuffer, indices, GlStaticDraw)
 
 	//=== SHADER
 	// Create a vertex shader object
-	vertShader := gl.NewShader(gl.GLEnum.VertexShader, vertShaderCode)
+	vertShader := gl.NewShader(GlVertexShader, vertShaderCode)
 
 	// Create fragment shader object
-	fragShader := gl.NewShader(gl.GLEnum.FragmentShader, fragShaderCode)
+	fragShader := gl.NewShader(GlFragmentShader, fragShaderCode)
 
 	// Create a shader program object to store
 	// the combined shader program
@@ -129,15 +129,14 @@ func Initialize(application Application) {
 	ModelMatrix := gl.Call("getUniformLocation", shaderProgram, "Mmatrix")
 
 	//gl.Call("bindBuffer", glTypes.ArrayBuffer, vertexBuffer)
-	//	gl.BindBuffer(gl.GLEnum.ArrayBuffer, vertexBuffer)
-	gl.context.Call("bindBuffer", ARRAY_BUFFER, vertexBuffer)
+	gl.BindBuffer(GlArrayBuffer, vertexBuffer)
 	position := gl.Call("getAttribLocation", shaderProgram, "position")
-	gl.Call("vertexAttribPointer", position, 3, glTypes.Float, false, 0, 0)
+	gl.Call("vertexAttribPointer", position, 3, GlFloat, false, 0, 0)
 	gl.Call("enableVertexAttribArray", position)
 
-	gl.BindBuffer(gl.GLEnum.ArrayBuffer, colorBuffer)
+	gl.BindBuffer(GlArrayBuffer, colorBuffer)
 	color := gl.Call("getAttribLocation", shaderProgram, "color")
-	gl.Call("vertexAttribPointer", color, 3, glTypes.Float, false, 0, 0)
+	gl.Call("vertexAttribPointer", color, 3, GlFloat, false, 0, 0)
 	gl.Call("enableVertexAttribArray", color)
 
 	gl.UseProgram(shaderProgram)
@@ -146,7 +145,7 @@ func Initialize(application Application) {
 	gl.Call("clearColor", 0.5, 0.5, 0.5, 0.9) // Color the screen is cleared to
 	gl.Call("clearDepth", 1.0)                // Z value that is set to the Depth buffer every frame
 	gl.Call("viewport", 0, 0, width, height)  // Viewport size
-	gl.Call("depthFunc", glTypes.LEqual)
+	gl.Call("depthFunc", GlLEqual)
 
 	//// Create Matrixes ////
 	ratio := float64(width) / float64(height)
@@ -175,7 +174,7 @@ func Initialize(application Application) {
 	var rotation = float32(0)
 
 	// Bind to element array for draw function
-	gl.Call("bindBuffer", glTypes.ElementArrayBuffer, indexBuffer)
+	gl.Call("bindBuffer", GlElementArrayBuffer, indexBuffer)
 
 	renderFrame = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		// Calculate rotation rate
@@ -203,12 +202,12 @@ func Initialize(application Application) {
 		gl.Call("uniformMatrix4fv", ModelMatrix, false, typedModelMatrixBuffer)
 
 		// Clear the screen
-		gl.Call("enable", glTypes.DepthTest)
-		gl.Call("clear", glTypes.ColorBufferBit)
-		gl.Call("clear", glTypes.DepthBufferBit)
+		gl.Call("enable", GlDepthTest)
+		gl.Call("clear", GlColorBufferBit)
+		gl.Call("clear", GlDepthBufferBit)
 
 		// Draw the cube
-		gl.Call("drawElements", glTypes.Triangles, len(indicesNative), glTypes.UnsignedShort, 0)
+		gl.Call("drawElements", GlTriangles, len(indicesNative), GlUnsignedShort, 0)
 
 		// Call next frame
 		js.Global().Call("requestAnimationFrame", renderFrame)
