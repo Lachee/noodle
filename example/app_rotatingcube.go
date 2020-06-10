@@ -3,11 +3,6 @@ package main
 import n "github.com/lachee/noodle"
 import "log"
 
-//Prepare some aliases, this will help us in the long run.
-type Matrix = n.Matrix
-type Vector2 = n.Vector2
-type Vector3 = n.Vector3
-
 type RotatingCubeApp struct {
 	vertexBuffer n.WebGLBuffer
 	colorBuffer  n.WebGLBuffer

@@ -1,33 +1,11 @@
-package noodle
-
-const newvertShaderCode = `
-attribute vec3 position;
-attribute vec2 textureCoord;
-
-uniform mat4 Pmatrix;
-uniform mat4 Vmatrix;
-uniform mat4 Mmatrix;
-
-attribute vec3 color;
-
-varying vec3 vColor;
-varying highp vec2 vTextureCoord;
-
-void main(void) {
-	gl_Position = Pmatrix * Vmatrix * Mmatrix * vec4(position, 1.);
-	vColor = color;
-	vTextureCoord = textureCoord;
-}
-`
-const newfragShaderCode = `
 precision mediump float;
 varying vec3 vColor;
 
 varying highp vec2 vTextureCoord;
 uniform sampler2D uSampler;
 
-uniform vec2 u_dimensions;
-uniform vec2 u_border;
+uniform vec2 uDimensions;
+uniform vec2 uBorder;
 
 
 float map(float value, float originalMin, float originalMax, float newMin, float newMax) {
@@ -46,8 +24,8 @@ float processAxis(float coord, float textureBorder, float windowBorder) {
 
 void main(void) {
   vec2 newUV = vec2(
-        processAxis(vTextureCoord.x, u_border.x, u_dimensions.x),
-        processAxis(vTextureCoord.y, u_border.y, u_dimensions.y)
+        processAxis(vTextureCoord.x, uBorder.x, uDimensions.x),
+        processAxis(vTextureCoord.y, uBorder.y, uDimensions.y)
     );
 
 
@@ -56,4 +34,3 @@ void main(void) {
 
     gl_FragColor =  texture2D(uSampler, newUV);
 }
-`

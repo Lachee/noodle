@@ -2,8 +2,14 @@ package main
 
 import "github.com/lachee/noodle"
 
+//Prepare some aliases, this will help us in the long run.
+type Matrix = noodle.Matrix
+type Vector2 = noodle.Vector2
+type Vector3 = noodle.Vector3
+
 func main() {
-	app := &RotatingCubeApp{}
+	//app := &RotatingCubeApp
+	app := &NineSliceApp{}
 	noodle.Initialize(app)
 }
 
