@@ -45,7 +45,7 @@ func (app *NineSliceApp) Start() bool {
 	app.uvBuffer = n.GL.NewBuffer(n.GlArrayBuffer, rotCubeUV, n.GlStaticDraw)
 
 	// == Load the cube image and the shaders
-	app.textureBorder = 15                             // Border Size of the image
+	app.textureBorder = 16                             // Border Size of the image
 	image, err := n.LoadImage("resources/tilefat.png") // The image URL
 	if err != nil {
 		log.Fatalln("Failed to load image", err)
@@ -101,15 +101,18 @@ func (app *NineSliceApp) Start() bool {
 
 //Update occurs once a frame
 func (app *NineSliceApp) Update(dt float32) {
-	app.scale = (float32(math.Sin(n.GetFrameTime()*0.005)/2) + 1) * 3
+	speed := 0.0015
+	scaleX := (float32(math.Sin(n.GetFrameTime()*speed)/2) + 1) * 3
+	scaleY := (float32(math.Cos(n.GetFrameTime()*speed)/2) + 1) * 3
+	scale := Vector2{scaleX, scaleY}
 
 	//Size of the geometry
-	box := app.clip.Scale(app.scale)
+	box := app.clip.Multiply(scale)
 	app.dimension = n.NewVector2(float32(app.textureBorder)/box.X, float32(app.textureBorder)/box.Y)
 
 	//Update the move matrix
 	movMatrix := n.NewMatrixRotate(n.NewVector3Up(), n.PI*2)
-	movMatrix = movMatrix.Multiply(n.NewMatrixScale(box.Scale(0.01).ToVector3()))
+	movMatrix = movMatrix.Multiply(n.NewMatrixScale(scale.ToVector3()))
 	app.moveMatrix = movMatrix
 }
 
