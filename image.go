@@ -101,24 +101,26 @@ func (i *Image) IsPowerOf2() bool {
 
 //Texture is a GPU image
 type Texture struct {
-	target  GLEnum
-	level   int
-	format  GLEnum
-	texture WebGLTexture
-	width   int
-	height  int
+	target    GLEnum
+	level     int
+	format    GLEnum
+	texture   WebGLTexture
+	width     int
+	height    int
+	noMipMaps bool
 }
 
 //NewTexture a new Texture from the image
 func NewTexture(image *Image) *Texture {
 	webglTexture := GL.CreateTexture()
 	tex := &Texture{
-		target:  GlTexture2D,
-		level:   0,
-		format:  GlRGBA,
-		texture: webglTexture,
-		width:   image.Width(),
-		height:  image.Height(),
+		target:    GlTexture2D,
+		level:     0,
+		format:    GlRGBA,
+		texture:   webglTexture,
+		width:     image.Width(),
+		height:    image.Height(),
+		noMipMaps: true,
 	}
 
 	tex.SetImage(image)
@@ -158,17 +160,24 @@ func (tex *Texture) SetImage(image *Image) {
 	GL.TexImage2D(tex.target, tex.level, tex.format, tex.format, GlUnsignedByte, image.Data())
 
 	//Generate mips
-	if image.IsPowerOf2() {
+	if !tex.noMipMaps && image.IsPowerOf2() {
 		GL.GenerateMipmap(tex.target)
 	} else {
 		//Turn of mips, not square
 		GL.TexParameteri(tex.target, GlTextureWrapS, GlClampToEdge)
 		GL.TexParameteri(tex.target, GlTextureWrapT, GlClampToEdge)
-		GL.TexParameteri(tex.target, GlTextureMinFilter, GlLinear)
+		GL.TexParameteri(tex.target, GlTextureMinFilter, GlNearest)
 	}
 }
 
 //Bind tells GL to use this texture
 func (tex *Texture) Bind() {
 	GL.BindTexture(tex.target, tex.texture)
+}
+
+//SetSampler updates the texture sampler
+func (tex *Texture) SetSampler(sampler WebGLUniformLocation, textureIndex int) {
+	GL.ActiveTexture(GlTexture0 + textureIndex)
+	GL.BindTexture(tex.target, tex.texture)
+	GL.Uniform1i(sampler, textureIndex)
 }

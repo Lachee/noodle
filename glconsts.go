@@ -205,39 +205,6 @@ const (
 	GlTextureCubeMapNegativeZ               = 0x851a
 	GlMaxCubeMapTextureSize                 = 0x851c
 
-	GlTexture0 = iota + 0x84c0 - 1
-	GlTexture1
-	GlTexture2
-	GlTexture3
-	GlTexture4
-	GlTexture5
-	GlTexture6
-	GlTexture7
-	GlTexture8
-	GlTexture9
-	GlTexture10
-	GlTexture11
-	GlTexture12
-	GlTexture13
-	GlTexture14
-	GlTexture15
-	GlTexture16
-	GlTexture17
-	GlTexture18
-	GlTexture19
-	GlTexture20
-	GlTexture21
-	GlTexture22
-	GlTexture23
-	GlTexture24
-	GlTexture25
-	GlTexture26
-	GlTexture27
-	GlTexture28
-	GlTexture29
-	GlTexture30
-	GlTexture31 = 0x84df
-
 	GlActiveTexture                             = 0x84e0
 	GlRepeat                                    = 0x2901
 	GlClampToEdge                               = 0x812f
@@ -623,4 +590,39 @@ const (
 	GlTimeElapsedExt                            = 0x88bf
 	GlTimestampExt                              = 0x8e28
 	GlGpuDisjointExt                            = 0x8fbb
+)
+
+const (
+	GlTexture0 = iota + 0x84c0
+	GlTexture1
+	GlTexture2
+	GlTexture3
+	GlTexture4
+	GlTexture5
+	GlTexture6
+	GlTexture7
+	GlTexture8
+	GlTexture9
+	GlTexture10
+	GlTexture11
+	GlTexture12
+	GlTexture13
+	GlTexture14
+	GlTexture15
+	GlTexture16
+	GlTexture17
+	GlTexture18
+	GlTexture19
+	GlTexture20
+	GlTexture21
+	GlTexture22
+	GlTexture23
+	GlTexture24
+	GlTexture25
+	GlTexture26
+	GlTexture27
+	GlTexture28
+	GlTexture29
+	GlTexture30
+	GlTexture31 = 0x84df
 )

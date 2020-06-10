@@ -39,17 +39,29 @@ func LoadShaderFromURL(vertURL, fragURL string) (*Shader, error) {
 	}
 	fragCode := string(fragBody)
 
-	return LoadShader(vertCode, fragCode), nil
+	return LoadShader(vertCode, fragCode)
 }
 
 //LoadShader loads a shader from code
-func LoadShader(vertCode, fragCode string) *Shader {
-	vertex := GL.NewShader(GlVertexShader, vertCode)
-	fragment := GL.NewShader(GlFragmentShader, fragCode)
+func LoadShader(vertCode, fragCode string) (*Shader, error) {
+	vertex, err := GL.NewShader(GlVertexShader, vertCode)
 	defer GL.DeleteShader(vertex)
+	if err != nil {
+		return nil, err
+	}
+
+	fragment, err := GL.NewShader(GlFragmentShader, fragCode)
 	defer GL.DeleteShader(fragment)
-	program := GL.NewProgram([]WebGLShader{vertex, fragment})
-	return &Shader{program}
+	if err != nil {
+		return nil, err
+	}
+
+	program, err := GL.NewProgram([]WebGLShader{vertex, fragment})
+	if err != nil {
+		return nil, err
+	}
+
+	return &Shader{program}, nil
 }
 
 //GetProgram gets the shader program

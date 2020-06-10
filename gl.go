@@ -1,6 +1,8 @@
 package noodle
 
 import (
+	"errors"
+	"log"
 	"syscall/js"
 )
 
@@ -63,16 +65,34 @@ func (gl *WebGL) ShaderSource(shader WebGLShader, source string) {
 }
 
 //CompileShader compiles the shader
-func (gl *WebGL) CompileShader(shader WebGLShader) {
+func (gl *WebGL) CompileShader(shader WebGLShader) error {
 	gl.context.Call("compileShader", shader)
+
+	if !gl.GetShaderParameter(shader, GlCompileStatus).Bool() {
+		err := errors.New(gl.GetShaderInfoLog(shader))
+		log.Println("Failed to compile shader", err)
+		return err
+	}
+
+	return nil
+}
+
+//GetShaderParameter returns information about the given shader.
+func (gl *WebGL) GetShaderParameter(shader WebGLShader, param GLEnum) js.Value {
+	return gl.context.Call("getShaderParameter", shader, param)
+}
+
+//GetShaderInfoLog returns the information log for the specified WebGLShader object. It contains warnings, debugging and compile information.
+func (gl *WebGL) GetShaderInfoLog(shader WebGLShader) string {
+	return gl.context.Call("getShaderInfoLog", shader).String()
 }
 
 //NewShader creates, sources and compiles a new shader
-func (gl *WebGL) NewShader(shaderType GLEnum, sourceCode string) WebGLShader {
+func (gl *WebGL) NewShader(shaderType GLEnum, sourceCode string) (WebGLShader, error) {
 	shader := gl.CreateShader(shaderType)
 	gl.ShaderSource(shader, sourceCode)
-	gl.CompileShader(shader)
-	return shader
+	err := gl.CompileShader(shader)
+	return shader, err
 }
 
 //DeleteShader marks a given WebGLShader object for deletion. It will then be deleted whenever the shader is no longer in use.
@@ -91,8 +111,15 @@ func (gl *WebGL) AttachShader(shaderProgram WebGLShaderProgram, shader WebGLShad
 }
 
 //LinkProgram inks a given WebGLProgram, completing the process of preparing the GPU code for the program's fragment and vertex shaders.
-func (gl *WebGL) LinkProgram(shaderProgram WebGLShaderProgram) {
+func (gl *WebGL) LinkProgram(shaderProgram WebGLShaderProgram) error {
 	gl.context.Call("linkProgram", shaderProgram)
+
+	if !gl.GetProgramParameter(shaderProgram, GlLinkStatus).Bool() {
+		err := errors.New(gl.GetProgramInfoLog(shaderProgram))
+		return err
+	}
+
+	return nil
 }
 
 //UseProgram tells webgl to start using this program
@@ -100,14 +127,25 @@ func (gl *WebGL) UseProgram(shaderProgram WebGLShaderProgram) {
 	gl.context.Call("useProgram", shaderProgram)
 }
 
+//GetProgramParameter returns information about the given program.
+func (gl *WebGL) GetProgramParameter(shaderProgram WebGLShaderProgram, param GLEnum) js.Value {
+	return gl.context.Call("getProgramParameter", shaderProgram, param)
+}
+
+//GetProgramInfoLog returns the information log for the specified WebGLProgram object. It contains errors that occurred during failed linking or validation of WebGLProgram objects.
+func (gl *WebGL) GetProgramInfoLog(shaderProgram WebGLShaderProgram) string {
+	return gl.context.Call("getProgramInfoLog", shaderProgram).String()
+}
+
 //NewProgram creates a new webgl shader program with some shaders and links it
-func (gl *WebGL) NewProgram(shaders []WebGLShader) WebGLShaderProgram {
+func (gl *WebGL) NewProgram(shaders []WebGLShader) (WebGLShaderProgram, error) {
 	program := gl.CreateProgram()
 	for _, shader := range shaders {
 		gl.AttachShader(program, shader)
 	}
-	gl.LinkProgram(program)
-	return program
+
+	err := gl.LinkProgram(program)
+	return program, err
 }
 
 //GetUniformLocation returns the location of a specific uniform variable which is part of a given WebGLProgram.
@@ -159,7 +197,7 @@ func (gl *WebGL) BlendFunc(sFactor GLEnum, gFactor GLEnum) {
 func (gl *WebGL) UniformMatrix4fv(location WebGLUniformLocation, matrix Matrix) {
 	buffer := matrix.DecomposePointer()
 	typedBuffer := sliceToTypedArray([]float32((*buffer)[:]))
-	gl.Call("uniformMatrix4fv", location, false, typedBuffer)
+	gl.context.Call("uniformMatrix4fv", location, false, typedBuffer)
 }
 
 //Enable enables a option
@@ -219,12 +257,12 @@ func (gl *WebGL) TexParameterf(target GLEnum, param GLEnum, value float64) {
 
 //=== Uniform Setting
 //Uniform1f specifies values of uniform variables
-func (gl *WebGL) Uniform1f(location WebGLUniformLocation, value float64) {
+func (gl *WebGL) Uniform1f(location WebGLUniformLocation, value float32) {
 	gl.context.Call("uniform1f", location, value)
 }
 
 //Uniform1fv specifies values of uniform variables
-func (gl *WebGL) Uniform1fv(location WebGLUniformLocation, value []float64) {
+func (gl *WebGL) Uniform1fv(location WebGLUniformLocation, value []float32) {
 	slice := sliceToTypedArray(value)
 	gl.context.Call("uniform1fv", location, slice)
 }
@@ -241,14 +279,14 @@ func (gl *WebGL) Uniform1iv(location WebGLUniformLocation, value []int) {
 }
 
 //Uniform2f specifies values of uniform variables
-func (gl *WebGL) Uniform2f(location WebGLUniformLocation, value, value2 float64) {
+func (gl *WebGL) Uniform2f(location WebGLUniformLocation, value, value2 float32) {
 	gl.context.Call("uniform2f", location, value, value2)
 }
 
 //Uniform2fv specifies values of uniform variables
-func (gl *WebGL) Uniform2fv(location WebGLUniformLocation, value []float64) {
+func (gl *WebGL) Uniform2fv(location WebGLUniformLocation, value []float32) {
 	slice := sliceToTypedArray(value)
-	gl.context.Call("uniform2f", location, slice)
+	gl.context.Call("Uniform2fv", location, slice)
 }
 
 //Uniform2i specifies values of uniform variables
@@ -260,6 +298,12 @@ func (gl *WebGL) Uniform2i(location WebGLUniformLocation, value, value2 int) {
 func (gl *WebGL) Uniform2iv(location WebGLUniformLocation, value []int) {
 	slice := sliceToTypedArray(value)
 	gl.context.Call("uniform2iv", location, slice)
+}
+
+//Uniform2v is an alias of Uniform2fv but with Vector support
+func (gl *WebGL) Uniform2v(location WebGLUniformLocation, value Vector2) {
+	tmp := sliceToTypedArray([]float32((*value.DecomposePointer())[:]))
+	gl.context.Call("uniform2fv", location, tmp)
 }
 
 //Call the internal context and reutrns the JS value

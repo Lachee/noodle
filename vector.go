@@ -20,7 +20,10 @@ type Vector2 struct {
 func NewVector2(x, y float32) Vector2 { return Vector2{X: x, Y: y} }
 
 //NewVector2d creates a new vector with double precesion float (float64)
-func NewVector2d(x, y, z float64) Vector2 { return Vector2{X: float32(x), Y: float32(y)} }
+func NewVector2d(x, y float64) Vector2 { return Vector2{X: float32(x), Y: float32(y)} }
+
+//NewVector2i creates a new vector
+func NewVector2i(x, y int) Vector2 { return Vector2{X: float32(x), Y: float32(y)} }
 
 //NewVector2Zero creates a vector with all components equaling 0
 func NewVector2Zero() Vector2 { return Vector2{X: 0, Y: 0} }
@@ -169,6 +172,9 @@ func NewVector3(x, y, z float32) Vector3 { return Vector3{X: x, Y: y, Z: z} }
 
 //NewVector3d creates a new vector with double precesion float (float64)
 func NewVector3d(x, y, z float64) Vector3 { return Vector3{X: float32(x), Y: float32(y), Z: float32(z)} }
+
+//NewVector3i creates a new vector
+func NewVector3i(x, y, z int) Vector3 { return Vector3{X: float32(x), Y: float32(y), Z: float32(z)} }
 
 //NewVector3Zero creates a vector with all components equaling 0
 func NewVector3Zero() Vector3 { return Vector3{X: 0, Y: 0, Z: 0} }
@@ -401,6 +407,11 @@ func NewVector4(x, y, z, w float32) Vector4 { return Vector4{X: x, Y: y, Z: z, W
 
 //NewVector4d creates a new vector with double precesion float (float64)
 func NewVector4d(x, y, z, w float64) Vector4 {
+	return Vector4{X: float32(x), Y: float32(y), Z: float32(z), W: float32(w)}
+}
+
+//NewVector4i creates a new vector
+func NewVector4i(x, y, z, w int) Vector4 {
 	return Vector4{X: float32(x), Y: float32(y), Z: float32(z), W: float32(w)}
 }
 

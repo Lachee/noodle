@@ -13,10 +13,12 @@ https://github.com/Lachee/engi/blob/master/SpriteRenderer.go - Engi SpriteRender
 
 import (
 	"log"
+	"math"
 	"syscall/js"
 )
 
 var (
+	//GL gives direct access to the WebGL component of the canvas.
 	GL              *WebGL
 	document        js.Value
 	canvas          js.Value
@@ -26,7 +28,18 @@ var (
 	width           int
 	height          int
 	texture         *Texture
+	frameTime       float64
+	deltaTime       float64
 )
+
+//GetFrameTime returns the time the last frame was rendered
+func GetFrameTime() float64 { return frameTime }
+
+//GetDeltaTime returns a high accuracy difference in time between the last frame and the current one.
+func GetDeltaTime() float64 { return deltaTime }
+
+//DT returns a less accurate version of GetDeltaTime, for all your 32bit mathmatic needs.
+func DT() float32 { return float32(deltaTime) }
 
 //GetInput returns the current input manager
 func GetInput() *Input {
@@ -72,10 +85,13 @@ func Initialize(application Application) {
 	//Create a new GL instance
 	GL = newWebGL(context)
 
+	//log.Println("GlTexture", GlTexture0, GlTexture1, GlTexture2, GlTexture31, GlTexture30, GlTexture29)
+	//log.Println("Literal32", 0x84C0, 0x84C1, 0x84C2, 0x84df, 0x84de, 0x84dd)
+
 	//Define the texture
-	image, err := LoadImage("resources/moomin.png")
+	//image, err := LoadImage("resources/moomin.png")
 	//image, err := LoadImage("resources/firefox.svg")
-	//image, err := LoadImage("resources/tile.png")
+	image, err := LoadImage("resources/tilefat.png")
 	if err != nil {
 		log.Fatalln("Failed to load image", err)
 		return
@@ -115,29 +131,85 @@ func Initialize(application Application) {
 	defer onMouseChangeEvent.Release()
 	canvas.Call("addEventListener", "mousedown", onMouseDownEvent)
 
-	//=== BUFFER
+	//Setup the animation frame
+	renderSetup()
+	frameRenderFunc = js.FuncOf(onRequestAnimationFrame)
+	defer frameRenderFunc.Release()
+	js.Global().Call("requestAnimationFrame", frameRenderFunc)
+	<-done
+}
+
+//RequestRedraw requests for a new animation frame
+func RequestRedraw() {
+	js.Global().Call("requestAnimationFrame", frameRenderFunc)
+}
+
+//onRequestAnimationFrame callback for animations
+func onRequestAnimationFrame(this js.Value, args []js.Value) interface{} {
+	//Setupt he time
+	time := args[0].Float()
+	deltaTime = time - frameTime
+	frameTime = time
+
+	input.update()
+	if render() {
+		RequestRedraw()
+	}
+	return nil
+}
+
+var (
+	vertexBuffer WebGLBuffer
+	colorBuffer  WebGLBuffer
+	indexBuffer  WebGLBuffer
+	uvBuffer     WebGLBuffer
+	basicShader  *Shader
+
+	uProjMatrixLoc  WebGLUniformLocation
+	uViewMatrixLoc  WebGLUniformLocation
+	uModelMatrixLoc WebGLUniformLocation
+	uSamplerLoc     WebGLUniformLocation
+	uDimensionLoc   WebGLUniformLocation
+	uBorderLoc      WebGLUniformLocation
+
+	projMatrix  Matrix
+	viewMatrix  Matrix
+	modelMatrix Matrix
+
+	rotation float32
+)
+
+func renderSetup() {
+
 	// Create vertex buffer
 	//vertexBuffer := GL.NewBuffer(GlArrayBuffer, verticesNative, GlStaticDraw)
-	vertexBuffer := GL.NewBuffer(GlArrayBuffer, verticesNativeV, GlStaticDraw)
+	vertexBuffer = GL.NewBuffer(GlArrayBuffer, planeVertices, GlStaticDraw)
 
 	// Create color buffer
-	colorBuffer := GL.NewBuffer(GlArrayBuffer, colorsNative, GlStaticDraw)
+	colorBuffer = GL.NewBuffer(GlArrayBuffer, colorsNative, GlStaticDraw)
 
 	// Create index buffer
-	indexBuffer := GL.NewBuffer(GlElementArrayBuffer, indicesNative, GlStaticDraw)
+	indexBuffer = GL.NewBuffer(GlElementArrayBuffer, planeIndices, GlStaticDraw)
 
 	// Create uv buffer
-	uvBuffer := GL.NewBuffer(GlArrayBuffer, uvNativeV, GlStaticDraw)
+	uvBuffer = GL.NewBuffer(GlArrayBuffer, planeUV, GlStaticDraw)
 
 	//=== SHADER
-	basicShader := LoadShader(vertShaderCode, fragShaderCode)
+	basicShader, err := LoadShader(newvertShaderCode, newfragShaderCode)
+	if err != nil {
+		log.Fatalln("Failed to load the shaders! ", err)
+		return
+	}
 
 	// Associate attributes to vertex shader
-	PositionMatrix := basicShader.GetUniformLocation("Pmatrix")
-	ViewMatrix := basicShader.GetUniformLocation("Vmatrix")
-	ModelMatrix := basicShader.GetUniformLocation("Mmatrix")
-	Sampler := basicShader.GetUniformLocation("uSampler")
+	uProjMatrixLoc = basicShader.GetUniformLocation("Pmatrix")
+	uViewMatrixLoc = basicShader.GetUniformLocation("Vmatrix")
+	uModelMatrixLoc = basicShader.GetUniformLocation("Mmatrix")
+	uSamplerLoc = basicShader.GetUniformLocation("uSampler")
+	uDimensionLoc = basicShader.GetUniformLocation("u_dimensions")
+	uBorderLoc = basicShader.GetUniformLocation("u_border")
 
+	//Bind the data we have
 	basicShader.BindVertexData("position", GlArrayBuffer, vertexBuffer, 3, GlFloat, false, 0, 0)
 	basicShader.BindVertexData("color", GlArrayBuffer, colorBuffer, 3, GlFloat, false, 0, 0)
 	basicShader.BindVertexData("textureCoord", GlArrayBuffer, uvBuffer, 2, GlFloat, false, 0, 0)
@@ -150,94 +222,71 @@ func Initialize(application Application) {
 	GL.DepthFunc(GlLEqual)
 
 	//// Create Matrixes ////
-	ratio := float64(width) / float64(height)
-
 	// Generate and apply projection matrix
-	projMatrix := NewMatrixPerspective(45.0, ratio, 1, 100.0)
-	GL.UniformMatrix4fv(PositionMatrix, projMatrix)
+	projMatrix = NewMatrixPerspective(45.0, float64(width)/float64(height), 1, 100.0)
+	//projMatrix = NewMatrixOrtho(left, right, bottom, top, 1, 100.0)
+	GL.UniformMatrix4fv(uProjMatrixLoc, projMatrix)
 
 	// Generate and apply view matrix
-	viewMatrix := NewMatrixLookAt(NewVector3(3.0, 3.0, 3.0), NewVector3Zero(), NewVector3Up())
-	GL.UniformMatrix4fv(ViewMatrix, viewMatrix)
-
-	//// Drawing the Cube ////
-	movMatrix := NewMatrixIdentity()
-	var tmark float32
-	var rotation = float32(0)
+	viewMatrix = NewMatrixLookAt(NewVector3(3.0, 0.0, 3.0), Vector3{0, 1.5, 0}, NewVector3Up())
+	GL.UniformMatrix4fv(uViewMatrixLoc, viewMatrix)
 
 	//Update the texture shit
 	// Activate the text0, tell the texture to bind, then tell the
 	//  sampler that it should be on 0
 	GL.ActiveTexture(GlTexture0)
 	texture.Bind()
-	GL.Uniform1i(Sampler, 0)
-
-	// Bind to element array for draw function
-	GL.BindBuffer(GlElementArrayBuffer, indexBuffer)
-	var renderFrame js.Func
-	renderFrame = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-
-		// Calculate rotation rate
-		now := float32(args[0].Float())
-		tdiff := now - tmark
-		tmark = now
-		rotation = rotation + float32(tdiff)/500
-
-		// Do new model matrix calculations
-		movMatrix = NewMatrixRotate(NewVector3Up(), 0.5*rotation)
-		movMatrix = movMatrix.Multiply(NewMatrixRotate(NewVector3Forward(), 0.3*rotation))
-		movMatrix = movMatrix.Multiply(NewMatrixRotate(NewVector3Right(), 0.2*rotation))
-		GL.UniformMatrix4fv(ModelMatrix, movMatrix)
-
-		// Clear the screen
-		GL.Enable(GlDepthTest)
-		GL.Clear(GlColorBufferBit | GlDepthBufferBit)
-
-		// Draw the cube
-		GL.DrawElements(GlTriangles, len(indicesNative), GlUnsignedShort, 0)
-
-		// Call next frame
-		js.Global().Call("requestAnimationFrame", renderFrame)
-		return nil
-	})
-	defer renderFrame.Release()
-
-	js.Global().Call("requestAnimationFrame", renderFrame)
-	//*/
-	/*
-		//Setup the animation frame
-		renderSetup()
-		frameRenderFunc = js.FuncOf(onRequestAnimationFrame)
-		defer frameRenderFunc.Release()
-		js.Global().Call("requestAnimationFrame", frameRenderFunc)
-	*/
-	<-done
-}
-
-//RequestRedraw requests for a new animation frame
-func RequestRedraw() {
-	js.Global().Call("requestAnimationFrame", frameRenderFunc)
-}
-
-//onRequestAnimationFrame callback for animations
-func onRequestAnimationFrame(this js.Value, args []js.Value) interface{} {
-	input.update()
-	if render() {
-		RequestRedraw()
-	}
-	return nil
-}
-
-func renderSetup() {
-
+	GL.Uniform1i(uSamplerLoc, 0)
+	//texture.SetSampler(uSamplerLoc, 0)
 }
 
 //render outpouts the render
 func render() bool {
+
+	// Bind to element array for draw function
+	GL.BindBuffer(GlElementArrayBuffer, indexBuffer)
+
+	// Calculate rotation rate
+	rotation = rotation + DT()/500
+	diff := float32(math.Sin(frameTime*0.005)/2) + 1
+	scale := diff * 3
+
+	clip := NewVector2i(texture.Width(), texture.Height())
+	box := NewVector2(scale*clip.X, scale*clip.Y)
+
+	var slice float32 = 15.0
+	border := NewVector2(slice/clip.X, slice/clip.Y)
+	dimension := NewVector2(slice/box.X, slice/box.Y)
+
+	GL.Uniform2f(uBorderLoc, border.X, border.Y)
+	GL.Uniform2f(uDimensionLoc, dimension.X, dimension.Y)
+
+	// Do new model matrix calculations
+	movMatrix := NewMatrixRotate(NewVector3Up(), 0.5)
+	movMatrix = movMatrix.Multiply(NewMatrixScale(box.Scale(0.01).ToVector3()))
+	//movMatrix = movMatrix.Multiply(NewMatrixRotate(NewVector3Forward(), 0.3*rotation))
+	//movMatrix = movMatrix.Multiply(NewMatrixRotate(NewVector3Right(), 0.2*rotation))
+	GL.UniformMatrix4fv(uModelMatrixLoc, movMatrix)
+
+	// Clear the screen
+	GL.Enable(GlDepthTest)
+	GL.Clear(GlColorBufferBit | GlDepthBufferBit)
+
+	// Draw the cube
+	GL.DrawElements(GlTriangles, len(planeIndices), GlUnsignedShort, 0)
+
 	return true
 }
 
-var planeVertices = []Vector3{}
+var planeVertices = []Vector3{
+	Vector3{0, 0, 0}, Vector3{0, 1, 0},
+	Vector3{1, 1, 0}, Vector3{1, 0, 0},
+}
+var planeUV = []Vector2{
+	Vector2{0, 0}, Vector2{0, 1},
+	Vector2{1, 1}, Vector2{1, 0},
+}
+var planeIndices = []uint16{0, 1, 2, 0, 2, 3}
 
 //// BUFFERS + SHADERS ////
 // Shamelessly copied from https://www.tutorialspoint.com/webgl/webgl_cube_rotation.htm //

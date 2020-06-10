@@ -39,7 +39,13 @@ func NewSpriteRenderer() *SpriteRenderer {
 
 	//Prepare the shader
 	//b.shader = LoadShader(SpriteRendererVertCode, SpriteRendererFragCode)
-	b.shader = LoadShader(SpriteRendererVertCode, NineSliceRendererFragCode)
+	var shaderError error
+	b.shader, shaderError = LoadShader(SpriteRendererVertCode, NineSliceRendererFragCode)
+	if shaderError != nil {
+		log.Fatalln("Failed to compile batch shader!", shaderError)
+		return nil
+	}
+
 	b.inPosition = b.shader.GetAttribLocation("in_Position")
 	b.inColor = b.shader.GetAttribLocation("in_Color")
 	b.inTexCoords = b.shader.GetAttribLocation("in_TexCoords")
@@ -120,7 +126,7 @@ func (b *SpriteRenderer) flush() {
 	b.lastTexture.Bind()
 
 	//Set the projection X and Y
-	GL.Uniform2f(b.ufProjection, b.projX, b.projY)
+	GL.Uniform2f(b.ufProjection, float32(b.projX), float32(b.projY))
 	GL.Uniform2f(b.ufvBorder, 0.1, 0.1)
 	GL.Uniform2f(b.ufvDimension, 1, 1)
 
