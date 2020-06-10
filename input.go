@@ -174,7 +174,7 @@ func (i *Input) GetMouseX() int { return i.mouseX }
 func (i *Input) GetMouseY() int { return i.mouseY }
 
 //GetMousePosition gets the current mouse position
-func (i *Input) GetMousePosition() Vector2 { return NewVector2(float64(i.mouseX), float64(i.mouseY)) }
+func (i *Input) GetMousePosition() Vector2 { return NewVector2(float32(i.mouseX), float32(i.mouseY)) }
 
 // GetButton gets if the current button is pressed
 func (i *Input) GetButton(button int) bool {

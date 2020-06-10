@@ -113,6 +113,11 @@ func NewMatrixTranslate(x, y, z float32) Matrix {
 	return Matrix{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, x, y, z, 1}
 }
 
+//NewMatrixTranslateV creates a blank translation matrix from vector
+func NewMatrixTranslateV(v Vector3) Matrix {
+	return Matrix{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, v.X, v.Y, v.Z, 1}
+}
+
 //NewMatrixTranslate64 creates a blank translation matrix
 func NewMatrixTranslate64(x, y, z float64) Matrix {
 	return NewMatrixTranslate(float32(x), float32(y), float32(z))
@@ -538,7 +543,7 @@ func NewMatrixLookAt(eye, target, up Vector3) Matrix {
 	}
 
 	//	return M.Mul4(Translate3D(float32(-eye[0]), float32(-eye[1]), float32(-eye[2])))
-	return matrix.Multiply(NewMatrixTranslate64(-eye.X, -eye.Y, -eye.Z))
+	return matrix.Multiply(NewMatrixTranslate(-eye.X, -eye.Y, -eye.Z))
 }
 
 //Decompose turns a matrix into an slice of floats

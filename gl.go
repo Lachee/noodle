@@ -46,6 +46,12 @@ func (gl *WebGL) BufferData(target GLEnum, data interface{}, usage GLEnum) {
 	gl.context.Call("bufferData", target, values, usage)
 }
 
+//BufferSubData updates a subset of a buffer object's data store.
+func (gl *WebGL) BufferSubData(target GLEnum, offset int, data interface{}) {
+	values := sliceToTypedArray(data)
+	gl.context.Call("bufferSubData", target, offset, values)
+}
+
 //CreateShader creates a new WebGLShader
 func (gl *WebGL) CreateShader(shaderType GLEnum) WebGLShader {
 	return gl.context.Call("createShader", shaderType)
@@ -220,7 +226,7 @@ func (gl *WebGL) Uniform1f(location WebGLUniformLocation, value float64) {
 //Uniform1fv specifies values of uniform variables
 func (gl *WebGL) Uniform1fv(location WebGLUniformLocation, value []float64) {
 	slice := sliceToTypedArray(value)
-	gl.context.Call("uniform1f", location, slice)
+	gl.context.Call("uniform1fv", location, slice)
 }
 
 //Uniform1i specifies values of uniform variables
@@ -231,7 +237,29 @@ func (gl *WebGL) Uniform1i(location WebGLUniformLocation, value int) {
 //Uniform1iv specifies values of uniform variables
 func (gl *WebGL) Uniform1iv(location WebGLUniformLocation, value []int) {
 	slice := sliceToTypedArray(value)
-	gl.context.Call("uniform1i", location, slice)
+	gl.context.Call("uniform1iv", location, slice)
+}
+
+//Uniform2f specifies values of uniform variables
+func (gl *WebGL) Uniform2f(location WebGLUniformLocation, value, value2 float64) {
+	gl.context.Call("uniform2f", location, value, value2)
+}
+
+//Uniform2fv specifies values of uniform variables
+func (gl *WebGL) Uniform2fv(location WebGLUniformLocation, value []float64) {
+	slice := sliceToTypedArray(value)
+	gl.context.Call("uniform2f", location, slice)
+}
+
+//Uniform2i specifies values of uniform variables
+func (gl *WebGL) Uniform2i(location WebGLUniformLocation, value, value2 int) {
+	gl.context.Call("uniform2i", location, value, value2)
+}
+
+//Uniform2iv specifies values of uniform variables
+func (gl *WebGL) Uniform2iv(location WebGLUniformLocation, value []int) {
+	slice := sliceToTypedArray(value)
+	gl.context.Call("uniform2iv", location, slice)
 }
 
 //Call the internal context and reutrns the JS value

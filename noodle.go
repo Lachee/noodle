@@ -8,7 +8,7 @@ https://mattdesl.svbtle.com/drawing-lines-is-hard - Even more lines
 https://github.com/mattdesl/webgl-lines/blob/master/expanded/frag.glsl - A line shader
 https://stdiopt.github.io/gowasm-experiments/rainbow-mouse/ - Example Go WASM
 https://www.gamedev.net/forums/topic/696879-glsl-9-slicing/ - 9 Slice
-https://github.com/Lachee/engi/blob/master/batch.go - Engi Batch Renderer
+https://github.com/Lachee/engi/blob/master/SpriteRenderer.go - Engi SpriteRenderer Renderer
 */
 
 import (
@@ -25,11 +25,22 @@ var (
 	app             Application
 	width           int
 	height          int
+	texture         *Texture
 )
 
 //GetInput returns the current input manager
 func GetInput() *Input {
 	return input
+}
+
+//Width gets the width of the screen
+func Width() int {
+	return canvas.Get("width").Int()
+}
+
+//Height gets the width of the screen
+func Height() int {
+	return canvas.Get("height").Int()
 }
 
 //Initialize sets up the Noodle renderer
@@ -39,6 +50,8 @@ func Initialize(application Application) {
 	input = newInput()
 	document = js.Global().Get("document")
 	canvas = document.Call("getElementById", "gocanvas")
+
+	//Set the width and height of the canvas to conver the entire screen
 	width = document.Get("body").Get("clientWidth").Int()
 	height = document.Get("body").Get("clientHeight").Int()
 	canvas.Set("width", width)
@@ -61,11 +74,14 @@ func Initialize(application Application) {
 
 	//Define the texture
 	image, err := LoadImage("resources/moomin.png")
+	//image, err := LoadImage("resources/firefox.svg")
+	//image, err := LoadImage("resources/tile.png")
 	if err != nil {
 		log.Fatalln("Failed to load image", err)
 		return
 	}
-	texture := NewTexture(image)
+
+	texture = NewTexture(image)
 
 	//Record canvas events
 	onMouseChangeEvent := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
@@ -101,7 +117,8 @@ func Initialize(application Application) {
 
 	//=== BUFFER
 	// Create vertex buffer
-	vertexBuffer := GL.NewBuffer(GlArrayBuffer, verticesNative, GlStaticDraw)
+	//vertexBuffer := GL.NewBuffer(GlArrayBuffer, verticesNative, GlStaticDraw)
+	vertexBuffer := GL.NewBuffer(GlArrayBuffer, verticesNativeV, GlStaticDraw)
 
 	// Create color buffer
 	colorBuffer := GL.NewBuffer(GlArrayBuffer, colorsNative, GlStaticDraw)
@@ -110,35 +127,17 @@ func Initialize(application Application) {
 	indexBuffer := GL.NewBuffer(GlElementArrayBuffer, indicesNative, GlStaticDraw)
 
 	// Create uv buffer
-	uvBuffer := GL.NewBuffer(GlArrayBuffer, uvNative, GlStaticDraw)
+	uvBuffer := GL.NewBuffer(GlArrayBuffer, uvNativeV, GlStaticDraw)
 
 	//=== SHADER
 	basicShader := LoadShader(vertShaderCode, fragShaderCode)
 
-	/*
-		// Create a vertex shader object
-		vertShader := GL.NewShader(GlVertexShader, vertShaderCode)
-
-		// Create fragment shader object
-		fragShader := GL.NewShader(GlFragmentShader, fragShaderCode)
-	*/
-
-	// Create a shader program object to store
-	// the combined shader program
-	//shaderProgram := GL.NewProgram([]WebGLShader{vertShader, fragShader})
-
 	// Associate attributes to vertex shader
-	//PositionMatrix := GL.GetUniformLocation(shaderProgram, "Pmatrix")
-	//ViewMatrix := GL.GetUniformLocation(shaderProgram, "Vmatrix")
-	//ModelMatrix := GL.GetUniformLocation(shaderProgram, "Mmatrix")
 	PositionMatrix := basicShader.GetUniformLocation("Pmatrix")
 	ViewMatrix := basicShader.GetUniformLocation("Vmatrix")
 	ModelMatrix := basicShader.GetUniformLocation("Mmatrix")
 	Sampler := basicShader.GetUniformLocation("uSampler")
 
-	//shaderProgram := basicShader.GetProgram()
-
-	//GL.Call("bindBuffer", glTypes.ArrayBuffer, vertexBuffer)
 	basicShader.BindVertexData("position", GlArrayBuffer, vertexBuffer, 3, GlFloat, false, 0, 0)
 	basicShader.BindVertexData("color", GlArrayBuffer, colorBuffer, 3, GlFloat, false, 0, 0)
 	basicShader.BindVertexData("textureCoord", GlArrayBuffer, uvBuffer, 2, GlFloat, false, 0, 0)
@@ -163,7 +162,6 @@ func Initialize(application Application) {
 
 	//// Drawing the Cube ////
 	movMatrix := NewMatrixIdentity()
-	var renderFrame js.Func
 	var tmark float32
 	var rotation = float32(0)
 
@@ -176,7 +174,9 @@ func Initialize(application Application) {
 
 	// Bind to element array for draw function
 	GL.BindBuffer(GlElementArrayBuffer, indexBuffer)
+	var renderFrame js.Func
 	renderFrame = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+
 		// Calculate rotation rate
 		now := float32(args[0].Float())
 		tdiff := now - tmark
@@ -203,46 +203,59 @@ func Initialize(application Application) {
 	defer renderFrame.Release()
 
 	js.Global().Call("requestAnimationFrame", renderFrame)
-	//Setup the animation frame
-	//frameRenderFunc = js.FuncOf(onRequestAnimationFrame)
-	//defer frameRenderFunc.Release()
-	//js.Global().Call("requestAnimationFrame", frameRenderFunc)
-
+	//*/
+	/*
+		//Setup the animation frame
+		renderSetup()
+		frameRenderFunc = js.FuncOf(onRequestAnimationFrame)
+		defer frameRenderFunc.Release()
+		js.Global().Call("requestAnimationFrame", frameRenderFunc)
+	*/
 	<-done
 }
 
+//RequestRedraw requests for a new animation frame
+func RequestRedraw() {
+	js.Global().Call("requestAnimationFrame", frameRenderFunc)
+}
+
+//onRequestAnimationFrame callback for animations
 func onRequestAnimationFrame(this js.Value, args []js.Value) interface{} {
 	input.update()
-
-	if input.GetButtonDown(0) {
-		println("Button Was Down!")
+	if render() {
+		RequestRedraw()
 	}
-
-	if input.GetButtonUp(0) {
-		println("Button Was Up!", input.GetMouseX(), input.GetMouseY())
-	}
-
-	js.Global().Call("requestAnimationFrame", frameRenderFunc)
 	return nil
 }
 
+func renderSetup() {
+
+}
+
+//render outpouts the render
+func render() bool {
+	return true
+}
+
+var planeVertices = []Vector3{}
+
 //// BUFFERS + SHADERS ////
 // Shamelessly copied from https://www.tutorialspoint.com/webgl/webgl_cube_rotation.htm //
-var verticesNative = []float32{
-	-1, -1, -1, 1, -1, -1, 1, 1, -1, -1, 1, -1,
-	-1, -1, 1, 1, -1, 1, 1, 1, 1, -1, 1, 1,
-	-1, -1, -1, -1, 1, -1, -1, 1, 1, -1, -1, 1,
-	1, -1, -1, 1, 1, -1, 1, 1, 1, 1, -1, 1,
-	-1, -1, -1, -1, -1, 1, 1, -1, 1, 1, -1, -1,
-	-1, 1, -1, -1, 1, 1, 1, 1, 1, 1, 1, -1,
+var verticesNativeV = []Vector3{
+	Vector3{-1, -1, -1}, Vector3{1, -1, -1}, Vector3{1, 1, -1}, Vector3{-1, 1, -1},
+	Vector3{-1, -1, 1}, Vector3{1, -1, 1}, Vector3{1, 1, 1}, Vector3{-1, 1, 1},
+	Vector3{-1, -1, -1}, Vector3{-1, 1, -1}, Vector3{-1, 1, 1}, Vector3{-1, -1, 1},
+	Vector3{1, -1, -1}, Vector3{1, 1, -1}, Vector3{1, 1, 1}, Vector3{1, -1, 1},
+	Vector3{-1, -1, -1}, Vector3{-1, -1, 1}, Vector3{1, -1, 1}, Vector3{1, -1, -1},
+	Vector3{-1, 1, -1}, Vector3{-1, 1, 1}, Vector3{1, 1, 1}, Vector3{1, 1, -1},
 }
-var uvNative = []float32{
-	0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
-	0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
-	0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
-	0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
-	0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
-	0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
+var uvNativeV = []Vector2{
+	Vector2{0.0, 0.0}, Vector2{1.0, 0.0}, Vector2{1.0, 1.0}, Vector2{0.0, 1.0},
+	Vector2{0.0, 0.0}, Vector2{1.0, 0.0}, Vector2{1.0, 1.0}, Vector2{0.0, 1.0},
+	Vector2{0.0, 0.0}, Vector2{1.0, 0.0}, Vector2{1.0, 1.0}, Vector2{0.0, 1.0},
+	Vector2{0.0, 0.0}, Vector2{1.0, 0.0}, Vector2{1.0, 1.0}, Vector2{0.0, 1.0},
+	Vector2{0.0, 0.0}, Vector2{1.0, 0.0}, Vector2{1.0, 1.0}, Vector2{0.0, 1.0},
+	Vector2{0.0, 0.0}, Vector2{1.0, 0.0}, Vector2{1.0, 1.0}, Vector2{0.0, 1.0},
 }
 var colorsNative = []float32{
 	5, 3, 7, 5, 3, 7, 5, 3, 7, 5, 3, 7,

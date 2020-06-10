@@ -5,6 +5,41 @@ import (
 	"syscall/js"
 )
 
+//UVTile interface provides methods for sprites
+type UVTile interface {
+	//Texture returns the texture
+	Texture() *Texture
+
+	//Width is the size in pixels of the source image
+	Width() int
+
+	//Height is the size in pixels of the source image
+	Height() int
+
+	//Slice returns uv extremes
+	Slice() (float32, float32, float32, float32)
+}
+
+type Sprite struct {
+	Source    *Texture
+	Rectangle Rectangle
+}
+
+func (spr *Sprite) Texture() *Texture { return spr.Source }
+func (spr *Sprite) Width() int        { return int(spr.Rectangle.X) }
+func (spr *Sprite) Height() int       { return int(spr.Rectangle.Y) }
+func (spr *Sprite) Slice() (float32, float32, float32, float32) {
+	invTexWidth := 1.0 / float32(spr.Source.Width())
+	invTexHeight := 1.0 / float32(spr.Source.Height())
+
+	u := spr.Rectangle.X * invTexWidth
+	v := spr.Rectangle.Y * invTexHeight
+	u2 := (spr.Rectangle.X + spr.Rectangle.Width) * invTexWidth
+	v2 := (spr.Rectangle.Y + spr.Rectangle.Height) * invTexHeight
+	return u, v, u2, v2
+}
+
+//Image is a CPU image
 type Image struct {
 	data js.Value
 }
@@ -64,11 +99,14 @@ func (i *Image) IsPowerOf2() bool {
 	return ((w & (w - 1)) == 0) && ((h & (h - 1)) == 0)
 }
 
+//Texture is a GPU image
 type Texture struct {
 	target  GLEnum
 	level   int
 	format  GLEnum
 	texture WebGLTexture
+	width   int
+	height  int
 }
 
 //NewTexture a new Texture from the image
@@ -79,10 +117,34 @@ func NewTexture(image *Image) *Texture {
 		level:   0,
 		format:  GlRGBA,
 		texture: webglTexture,
+		width:   image.Width(),
+		height:  image.Height(),
 	}
 
 	tex.SetImage(image)
 	return tex
+}
+
+//Width gets the width of the texture
+func (tex *Texture) Width() int { return tex.width }
+
+//Height gets the width of the texture
+func (tex *Texture) Height() int { return tex.height }
+
+//Texture returns this texture. Exists for compatability with the UVTile
+func (tex *Texture) Texture() *Texture { return tex }
+
+//Slice slices the texture into a UV region
+func (tex *Texture) Slice() (float64, float64, float64, float64) {
+	return 0.0, 0.0, 1.0, 1.0
+}
+
+//CreateSprite creates a sprite
+func (tex *Texture) CreateSprite(region Rectangle) *Sprite {
+	return &Sprite{
+		Source:    tex,
+		Rectangle: region,
+	}
 }
 
 //Data gets the internal JS reference

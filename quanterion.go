@@ -6,10 +6,10 @@ import "math"
 
 //Quaternion A represntation of rotations that does not suffer from gimbal lock
 type Quaternion struct {
-	X float64
-	Y float64
-	Z float64
-	W float64
+	X float32
+	Y float32
+	Z float32
+	W float32
 }
 
 //NewQuaternionIdentity creates a Quaternion Identity (a blank quaternion)
@@ -23,7 +23,7 @@ func NewQuaternionVector3ToVector3(from, too Vector3) Quaternion {
 }
 
 //NewQuaternionFromAxisAngle creates a quaternion from an axis and its rotation
-func NewQuaternionFromAxisAngle(axis Vector3, angle float64) Quaternion {
+func NewQuaternionFromAxisAngle(axis Vector3, angle float32) Quaternion {
 
 	if axis.Length() != 0 {
 		angle *= 0.5
@@ -31,25 +31,25 @@ func NewQuaternionFromAxisAngle(axis Vector3, angle float64) Quaternion {
 
 	axis = axis.Normalize()
 
-	sinres := math.Sin(angle)
-	cosres := math.Cos(angle)
+	sinres := float32(math.Sin(float64(angle)))
+	cosres := float32(math.Cos(float64(angle)))
 
 	return Quaternion{X: axis.X * sinres, Y: axis.Y * sinres, Z: axis.Z * sinres, W: cosres}.Normalize()
 }
 
 //NewQuaternionFromMatrix creates a Quaternion from a rotation matrix
 func NewQuaternionFromMatrix(mat Matrix) Quaternion {
-	var s float64
-	var invS float64
+	var s float32
+	var invS float32
 	trace := mat.Trace()
 
 	if trace > 0 {
-		s = math.Sqrt(float64(trace+1)) * 2
+		s = float32(math.Sqrt(float64(trace+1)) * 2)
 		invS = 1 / s
 		return Quaternion{
-			X: float64(mat.M6-mat.M9) * invS,
-			Y: float64(mat.M8-mat.M2) * invS,
-			Z: float64(mat.M1-mat.M4) * invS,
+			X: (mat.M6 - mat.M9) * invS,
+			Y: (mat.M8 - mat.M2) * invS,
+			Z: (mat.M1 - mat.M4) * invS,
 			W: s * 0.25,
 		}
 	}
@@ -59,43 +59,43 @@ func NewQuaternionFromMatrix(mat Matrix) Quaternion {
 	m22 := mat.M10
 
 	if m00 > m11 && m00 > m22 {
-		s = math.Sqrt(float64(1+m00-m11-m22)) * 2
+		s = float32(math.Sqrt(float64(1+m00-m11-m22)) * 2)
 		invS = 1 / s
 		return Quaternion{
 			X: s * 0.25,
-			Y: float64(mat.M4-mat.M1) * invS,
-			Z: float64(mat.M8-mat.M2) * invS,
-			W: float64(mat.M6-mat.M9) * invS,
+			Y: (mat.M4 - mat.M1) * invS,
+			Z: (mat.M8 - mat.M2) * invS,
+			W: (mat.M6 - mat.M9) * invS,
 		}
 	} else if m11 > m22 {
-		s = math.Sqrt(float64(1+m11-m00-m22)) * 2
+		s = float32(math.Sqrt(float64(1+m11-m00-m22)) * 2)
 		invS = 1 / s
 		return Quaternion{
-			X: float64(mat.M4-mat.M1) * invS,
+			X: (mat.M4 - mat.M1) * invS,
 			Y: s * 0.25,
-			Z: float64(mat.M9-mat.M6) * invS,
-			W: float64(mat.M8-mat.M2) * invS,
+			Z: (mat.M9 - mat.M6) * invS,
+			W: (mat.M8 - mat.M2) * invS,
 		}
 	}
 
-	s = math.Sqrt(float64(1+m22-m00-m11)) * 2
+	s = float32(math.Sqrt(float64(1+m22-m00-m11)) * 2)
 	invS = 1 / s
 	return Quaternion{
-		X: float64(mat.M8-mat.M2) * invS,
-		Y: float64(mat.M9-mat.M6) * invS,
+		X: (mat.M8 - mat.M2) * invS,
+		Y: (mat.M9 - mat.M6) * invS,
 		Z: s * 0.25,
-		W: float64(mat.M1-mat.M4) * invS,
+		W: (mat.M1 - mat.M4) * invS,
 	}
 }
 
 //NewQuaternionFromEuler creates a quaternion from euler angles (roll, yaw, pitch)
 func NewQuaternionFromEuler(euler Vector3) Quaternion {
-	x0 := math.Cos(euler.X * 0.5)
-	x1 := math.Sin(euler.X * 0.5)
-	y0 := math.Cos(euler.Y * 0.5)
-	y1 := math.Sin(euler.Y * 0.5)
-	z0 := math.Cos(euler.Z * 0.5)
-	z1 := math.Sin(euler.Z * 0.5)
+	x0 := float32(math.Cos(float64(euler.X * 0.5)))
+	x1 := float32(math.Sin(float64(euler.X * 0.5)))
+	y0 := float32(math.Cos(float64(euler.Y * 0.5)))
+	y1 := float32(math.Sin(float64(euler.Y * 0.5)))
+	z0 := float32(math.Cos(float64(euler.Z * 0.5)))
+	z1 := float32(math.Sin(float64(euler.Z * 0.5)))
 	return Quaternion{
 		X: x1*y0*z0 - x0*y1*z1,
 		Y: x0*y1*z0 + x1*y0*z1,
@@ -120,20 +120,20 @@ func (q Quaternion) Invert() Quaternion {
 }
 
 //Decompose the quaternion into a slice of floats
-func (q Quaternion) Decompose() []float64 { return []float64{q.X, q.Y, q.Z, q.W} }
+func (q Quaternion) Decompose() []float32 { return []float32{q.X, q.Y, q.Z, q.W} }
 
 //Length of the quaternion
-func (q Quaternion) Length() float64 {
-	return math.Sqrt((q.X * q.X) + (q.Y * q.Y) + (q.Z * q.Z) + (q.W * q.W))
+func (q Quaternion) Length() float32 {
+	return float32(math.Sqrt(float64(q.X*q.X) + float64(q.Y*q.Y) + float64(q.Z*q.Z) + float64(q.W*q.W)))
 }
 
 //SqrLength is the squared length of the quaternion
-func (q Quaternion) SqrLength() float64 {
-	return (q.X * q.X) + (q.Y * q.Y) + (q.Z * q.Z) + (q.W * q.W)
+func (q Quaternion) SqrLength() float32 {
+	return float32(float64(q.X*q.X) + float64(q.Y*q.Y) + float64(q.Z*q.Z) + float64(q.W*q.W))
 }
 
 //Scale the quaternion (v * scale)
-func (q Quaternion) Scale(scale float64) Quaternion {
+func (q Quaternion) Scale(scale float32) Quaternion {
 	return Quaternion{X: q.X * scale, Y: q.Y * scale, Z: q.Z * scale, W: q.W * scale}
 }
 
@@ -159,7 +159,7 @@ func (q Quaternion) Multiply(q2 Quaternion) Quaternion {
 }
 
 //Lerp a vector towards another vector
-func (q Quaternion) Lerp(target Quaternion, amount float64) Quaternion {
+func (q Quaternion) Lerp(target Quaternion, amount float32) Quaternion {
 	return Quaternion{
 		X: q.X + amount*(target.X-q.X),
 		Y: q.Y + amount*(target.Y-q.Y),
@@ -169,14 +169,14 @@ func (q Quaternion) Lerp(target Quaternion, amount float64) Quaternion {
 }
 
 //Nlerp slerp-optimized interpolation between two quaternions
-func (q Quaternion) Nlerp(target Quaternion, amount float64) Quaternion {
+func (q Quaternion) Nlerp(target Quaternion, amount float32) Quaternion {
 	return q.Lerp(target, amount).Normalize()
 }
 
 //Slerp Spherically Lerped
-func (q Quaternion) Slerp(q2 Quaternion, amount float64) Quaternion {
+func (q Quaternion) Slerp(q2 Quaternion, amount float32) Quaternion {
 	cosHalfTheta := q.X*q2.X + q.Y*q2.Y + q.Z*q2.Z + q.W*q2.W
-	if math.Abs(cosHalfTheta) >= 1 {
+	if math.Abs((float64(cosHalfTheta))) >= 1 {
 		return q
 	}
 
@@ -184,10 +184,10 @@ func (q Quaternion) Slerp(q2 Quaternion, amount float64) Quaternion {
 		return q.Nlerp(q2, amount)
 	}
 
-	halfTheta := math.Acos(cosHalfTheta)
-	sinHalfTheta := math.Sqrt(1 - cosHalfTheta*cosHalfTheta)
+	halfTheta := float32(math.Acos(float64(cosHalfTheta)))
+	sinHalfTheta := float32(math.Sqrt(float64(1 - cosHalfTheta*cosHalfTheta)))
 
-	if math.Abs(sinHalfTheta) < 0.001 {
+	if math.Abs(float64(sinHalfTheta)) < 0.001 {
 		return Quaternion{
 			X: q.X*0.5 + q.X*0.5,
 			Y: q.Y*0.5 + q.Y*0.5,
@@ -196,8 +196,8 @@ func (q Quaternion) Slerp(q2 Quaternion, amount float64) Quaternion {
 		}
 	}
 
-	ratioA := math.Sin(((1 - amount) * halfTheta)) / (sinHalfTheta)
-	ratioB := math.Sin((amount * halfTheta)) / (sinHalfTheta)
+	ratioA := float32(math.Sin(float64((1-amount)*halfTheta)) / float64(sinHalfTheta))
+	ratioB := float32(math.Sin(float64(amount*halfTheta)) / float64(sinHalfTheta))
 
 	return Quaternion{
 		X: q.X*ratioA + q.X*ratioB,
@@ -213,19 +213,19 @@ func (q Quaternion) ToMatrix() Matrix {
 }
 
 //ToAxisAngle returns the rotation angle and axis for a given quaternion
-func (q Quaternion) ToAxisAngle() (Vector3, float64) {
+func (q Quaternion) ToAxisAngle() (Vector3, float32) {
 
-	var den float64
-	var resAngle float64
+	var den float32
+	var resAngle float32
 	var resAxis Vector3
 
-	if math.Abs(q.W) > 1 {
+	if math.Abs(float64(q.W)) > 1 {
 		q = q.Normalize()
 	}
 
 	resAxis = Vector3{0, 0, 0}
-	resAngle = 2 * math.Atan(q.W)
-	den = math.Sqrt(1 - q.W*q.W)
+	resAngle = 2 * float32(math.Atan(float64(q.W)))
+	den = float32(math.Sqrt(float64(1 - q.W*q.W)))
 	if den > 0.0001 {
 		resAxis.X = q.X / den
 		resAxis.Y = q.Y / den
@@ -246,23 +246,18 @@ func (q Quaternion) ToEuler() Vector3 {
 	z1 := 1 - 2*(q.Y*q.Y+q.Z*q.Z)
 
 	return Vector3{
-		X: math.Atan2(x0, x1) * Rad2Deg,
-		Y: math.Asin(y0) * Rad2Deg,
-		Z: math.Atan2(z0, z1) * Rad2Deg,
+		X: float32(math.Atan2(float64(x0), float64(x1))) * Rad2Deg,
+		Y: float32(math.Asin(y0)) * Rad2Deg,
+		Z: float32(math.Atan2(float64(z0), float64(z1))) * Rad2Deg,
 	}
 }
 
 //Transform a quaternion, given a transformation matrix
 func (q Quaternion) Transform(mat Matrix) Quaternion {
-	X := float32(q.X)
-	Y := float32(q.Y)
-	Z := float32(q.Z)
-	W := float32(q.W)
-
 	return Quaternion{
-		X: float64(mat.M0*X + mat.M4*Y + mat.M8*Z + mat.M12*W),
-		Y: float64(mat.M1*X + mat.M5*Y + mat.M9*Z + mat.M13*W),
-		Z: float64(mat.M2*X + mat.M6*Y + mat.M10*Z + mat.M14*W),
-		W: float64(mat.M3*X + mat.M7*Y + mat.M11*Z + mat.M15*W),
+		X: mat.M0*q.X + mat.M4*q.Y + mat.M8*q.Z + mat.M12*q.W,
+		Y: mat.M1*q.X + mat.M5*q.Y + mat.M9*q.Z + mat.M13*q.W,
+		Z: mat.M2*q.X + mat.M6*q.Y + mat.M10*q.Z + mat.M14*q.W,
+		W: mat.M3*q.X + mat.M7*q.Y + mat.M11*q.Z + mat.M15*q.W,
 	}
 }

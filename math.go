@@ -4,13 +4,13 @@ import "unsafe"
 
 const (
 	//PI 3.1415
-	PI float64 = 3.14159265358979323846
+	PI float32 = 3.14159265358979323846
 
 	//Deg2Rad used to convert degrees into radians
-	Deg2Rad float64 = PI / 180
+	Deg2Rad float32 = PI / 180
 
 	//Rad2Deg used to convert radians into degrees
-	Rad2Deg float64 = 180 / PI
+	Rad2Deg float32 = 180 / PI
 )
 
 //Clamp a value between min and max
