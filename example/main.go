@@ -2,24 +2,24 @@ package main
 
 import "github.com/lachee/noodle"
 
-var app *MainApplication
-
 func main() {
-	app = &MainApplication{}
+	app := &RotatingCubeApp{}
 	noodle.Initialize(app)
 }
 
-type MainApplication struct {
+//BaseApplication handles the game. Put your variables in here
+type BaseApplication struct {
 }
 
-func (app *MainApplication) Setup() {
-
+//Start allows for setup
+func (app *BaseApplication) Start() bool {
+	return false
 }
 
-func (app *MainApplication) Update(deltaTime float64) {
-
+//Update runs once a frame
+func (app *BaseApplication) Update(dt float32) {
 }
 
-func (app *MainApplication) Render() {
-
+//Render draws the frame
+func (app *BaseApplication) Render() {
 }

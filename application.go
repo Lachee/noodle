@@ -1,7 +1,7 @@
 package noodle
 
 type Application interface {
-	Setup()
-	Update(deltaTime float64)
+	Start() bool
+	Update(deltaTime float32)
 	Render()
 }
