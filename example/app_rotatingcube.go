@@ -1,7 +1,12 @@
 package main
 
-import n "github.com/lachee/noodle"
-import "log"
+import (
+	"image"
+	"image/color"
+	"log"
+
+	n "github.com/lachee/noodle"
+)
 
 type RotatingCubeApp struct {
 	vertexBuffer n.WebGLBuffer
@@ -25,6 +30,29 @@ type RotatingCubeApp struct {
 	texture  *n.Texture
 }
 
+func (app *RotatingCubeApp) PrepareImage() (*n.Image, error) {
+
+	//Size of the image
+	const width = 255
+	const height = 255
+
+	//Create the image
+	upLeft := image.Point{0, 0}
+	lowRight := image.Point{width, height}
+	img := image.NewRGBA(image.Rectangle{upLeft, lowRight})
+
+	// Set color for each pixel.
+	for x := 0; x < width; x++ {
+		for y := 0; y < height; y++ {
+			color := color.RGBA{uint8(x), uint8(y), 128, 0xff}
+			img.Set(x, y, color)
+		}
+	}
+
+	return n.LoadImageRGBA(img)
+	//return n.LoadImage("resources/moomin.png") // The image URL
+}
+
 func (app *RotatingCubeApp) Start() bool {
 
 	// Create vertex buffer
@@ -34,7 +62,7 @@ func (app *RotatingCubeApp) Start() bool {
 	app.uvBuffer = n.GL.NewBuffer(n.GlArrayBuffer, rotCubeUV, n.GlStaticDraw)
 
 	// == Load the cube image and the shaders
-	image, err := n.LoadImage("resources/moomin.png")
+	image, err := app.PrepareImage()
 	if err != nil {
 		log.Fatalln("Failed to load image", err)
 		return false

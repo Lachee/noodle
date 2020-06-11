@@ -8,8 +8,8 @@ type Vector2 = noodle.Vector2
 type Vector3 = noodle.Vector3
 
 func main() {
-	//app := &RotatingCubeApp
-	app := &NineSliceApp{}
+	app := &RotatingCubeApp{}
+	//app := &NineSliceApp{}
 	noodle.Initialize(app)
 }
 

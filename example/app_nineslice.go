@@ -36,6 +36,10 @@ type NineSliceApp struct {
 	dimension Vector2 //Translated size of the geometry
 }
 
+func (app *NineSliceApp) PrepareImage() (*n.Image, error) {
+	return n.LoadImage("resources/tile.png") // The image URL
+}
+
 func (app *NineSliceApp) Start() bool {
 
 	// Create vertex buffer
@@ -45,12 +49,13 @@ func (app *NineSliceApp) Start() bool {
 	app.uvBuffer = n.GL.NewBuffer(n.GlArrayBuffer, rotCubeUV, n.GlStaticDraw)
 
 	// == Load the cube image and the shaders
-	app.textureBorder = 5                           // Border Size of the image
-	image, err := n.LoadImage("resources/tile.png") // The image URL
+	app.textureBorder = 5 // Border Size of the image
+	image, err := app.PrepareImage()
 	if err != nil {
 		log.Fatalln("Failed to load image", err)
 		return false
 	}
+
 	app.texture = n.NewTexture(image)
 	app.texture.SetFilter(n.TextureFilterNearest)
 

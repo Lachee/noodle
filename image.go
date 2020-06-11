@@ -2,6 +2,8 @@ package noodle
 
 import (
 	"errors"
+	"image"
+	"runtime"
 	"syscall/js"
 )
 
@@ -20,6 +22,7 @@ type UVTile interface {
 	Slice() (float32, float32, float32, float32)
 }
 
+//Sprite is a basic implementation of a UVTile. Its a single texture with a rectangle slice.
 type Sprite struct {
 	Source    *Texture
 	Rectangle Rectangle
@@ -41,7 +44,10 @@ func (spr *Sprite) Slice() (float32, float32, float32, float32) {
 
 //Image is a CPU image
 type Image struct {
-	data js.Value
+	data   js.Value
+	format GLEnum
+	width  int
+	height int
 }
 
 //LoadImage loads a new image
@@ -73,8 +79,29 @@ func LoadImage(url string) (*Image, error) {
 		return nil, err
 	}
 
+	width := img.Get("width").Int()
+	height := img.Get("height").Int()
+
 	//Finish
-	return &Image{img}, nil
+	return &Image{img, GlRGBA, width, height}, nil
+}
+
+//LoadImageRGBA loads a go RGBA image
+func LoadImageRGBA(rgba *image.RGBA) (*Image, error) {
+	//Get the pixels and convert it into a Uint8ClampedArray
+	s := rgba.Pix
+	a := js.Global().Get("Uint8Array").New(len(s))
+	js.CopyBytesToJS(a, sliceToByteSlice(s))
+	runtime.KeepAlive(s)
+	buf := a.Get("buffer")
+	ac := js.Global().Get("Uint8ClampedArray").New(buf, a.Get("byteOffset"), a.Get("byteLength"))
+
+	//Create the image data
+	bounds := rgba.Bounds()
+	imageData := js.Global().Get("ImageData").New(ac, bounds.Dx(), bounds.Dy())
+
+	//Return the final image
+	return &Image{imageData, GlRGBA, bounds.Dx(), bounds.Dy()}, nil
 }
 
 //Data gets the JS value
@@ -84,12 +111,12 @@ func (i *Image) Data() js.Value {
 
 //Width gets the width in pixels
 func (i *Image) Width() int {
-	return i.data.Get("width").Int()
+	return i.width
 }
 
 //Height gets the height in pixels
 func (i *Image) Height() int {
-	return i.data.Get("height").Int()
+	return i.height
 }
 
 //IsPowerOf2 checks if the image is a square power
@@ -186,6 +213,11 @@ func (tex *Texture) Data() WebGLTexture {
 
 //SetImage copies the data from the Image into the texture, setting initial filtering.
 func (tex *Texture) SetImage(image *Image) {
+
+	//Update the formatting
+	tex.format = image.format
+
+	//Setup the texture
 	GL.BindTexture(tex.target, tex.texture)
 	GL.TexImage2D(tex.target, tex.level, tex.format, tex.format, GlUnsignedByte, image.Data())
 
