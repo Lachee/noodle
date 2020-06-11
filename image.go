@@ -99,6 +99,36 @@ func (i *Image) IsPowerOf2() bool {
 	return ((w & (w - 1)) == 0) && ((h & (h - 1)) == 0)
 }
 
+//TextureFilter  is the filter to use on a texture
+type TextureFilter = GLEnum
+
+//TextureWrap is how a texture should be wrapped.
+type TextureWrap = GLEnum
+
+const (
+	//TextureFilterLinear linear filtering
+	TextureFilterLinear TextureFilter = GlLinear
+	//TextureFilterNearest nearest neighbour filtering
+	TextureFilterNearest = GlNearest
+	//TextureFilterNearestMipmapNearest nearest neighbour filtering
+	TextureFilterNearestMipmapNearest = GlNearestMipmapNearest
+	//TextureFilterLinearMipmapNearest linear filtering
+	TextureFilterLinearMipmapNearest = GlLinearMipmapNearest
+	//TextureFilterNearestMipmapLinear nearest neighbour filtering
+	TextureFilterNearestMipmapLinear = GlNearestMipmapLinear
+	//TextureFilterLinearMipmapLinear linear filtering
+	TextureFilterLinearMipmapLinear = GlLinearMipmapLinear
+)
+
+const (
+	//TextureWrapRepeat repeats the texture
+	TextureWrapRepeat TextureWrap = GlRepeat
+	//TextureWrapClampToEdge clamps the texture
+	TextureWrapClampToEdge = GlClampToEdge
+	//TextureWrapMirroredRepeat mirrors the texture
+	TextureWrapMirroredRepeat = GlMirroredRepeat
+)
+
 //Texture is a GPU image
 type Texture struct {
 	target    GLEnum
@@ -154,7 +184,7 @@ func (tex *Texture) Data() WebGLTexture {
 	return tex.texture
 }
 
-//SetImage sets the texture's image
+//SetImage copies the data from the Image into the texture, setting initial filtering.
 func (tex *Texture) SetImage(image *Image) {
 	GL.BindTexture(tex.target, tex.texture)
 	GL.TexImage2D(tex.target, tex.level, tex.format, tex.format, GlUnsignedByte, image.Data())
@@ -166,8 +196,23 @@ func (tex *Texture) SetImage(image *Image) {
 		//Turn of mips, not square
 		GL.TexParameteri(tex.target, GlTextureWrapS, GlClampToEdge)
 		GL.TexParameteri(tex.target, GlTextureWrapT, GlClampToEdge)
-		GL.TexParameteri(tex.target, GlTextureMinFilter, GlNearest)
+		GL.TexParameteri(tex.target, GlTextureMinFilter, GlLinear)
+		GL.TexParameteri(tex.target, GlTextureMagFilter, GlLinear)
 	}
+}
+
+//SetFilter binds the texture and sets the filtering
+func (tex *Texture) SetFilter(filter TextureFilter) {
+	GL.BindTexture(tex.target, tex.texture)
+	GL.TexParameteri(tex.target, GlTextureMinFilter, filter)
+	GL.TexParameteri(tex.target, GlTextureMagFilter, filter)
+}
+
+//SetWrap binds the texture and sets how the texture will be wrapped
+func (tex *Texture) SetWrap(wrap TextureWrap) {
+	GL.BindTexture(tex.target, tex.texture)
+	GL.TexParameteri(tex.target, GlTextureWrapS, wrap)
+	GL.TexParameteri(tex.target, GlTextureWrapT, wrap)
 }
 
 //Bind tells GL to use this texture

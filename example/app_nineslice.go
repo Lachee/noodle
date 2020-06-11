@@ -45,13 +45,15 @@ func (app *NineSliceApp) Start() bool {
 	app.uvBuffer = n.GL.NewBuffer(n.GlArrayBuffer, rotCubeUV, n.GlStaticDraw)
 
 	// == Load the cube image and the shaders
-	app.textureBorder = 16                             // Border Size of the image
-	image, err := n.LoadImage("resources/tilefat.png") // The image URL
+	app.textureBorder = 5                           // Border Size of the image
+	image, err := n.LoadImage("resources/tile.png") // The image URL
 	if err != nil {
 		log.Fatalln("Failed to load image", err)
 		return false
 	}
 	app.texture = n.NewTexture(image)
+	app.texture.SetFilter(n.TextureFilterNearest)
+
 	app.clip = n.NewVector2i(app.texture.Width(), app.texture.Height())
 	app.border = n.NewVector2(float32(app.textureBorder)/app.clip.X, float32(app.textureBorder)/app.clip.Y)
 
