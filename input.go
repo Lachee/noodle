@@ -118,39 +118,39 @@ const (
 	KeyStateRelease
 )
 
-type Input struct {
+type InputHandler struct {
 	mouseX       int
 	mouseY       int
 	buttonStates [5]KeyState
 }
 
-func newInput() *Input {
-	i := Input{}
+func newInput() *InputHandler {
+	i := InputHandler{}
 	i.mouseX = 0
 	i.mouseY = 0
 	return &i
 }
 
 /// Stores the mouse position
-func (i *Input) setMousePosition(x, y int) {
+func (i *InputHandler) setMousePosition(x, y int) {
 	i.mouseX = x
 	i.mouseY = y
 }
 
 //Sets the mouse Down State
-func (i *Input) setMouseDown(button int) {
+func (i *InputHandler) setMouseDown(button int) {
 	//println("Mouse Down", button)
 	i.buttonStates[button] = KeyStatePrePressed
 }
 
 //Sets the mouse up state
-func (i *Input) setMouseUp(button int) {
+func (i *InputHandler) setMouseUp(button int) {
 	//println("Mouse Up", button)
 	i.buttonStates[button] = KeyStatePreRelease
 }
 
 //Processes the input changes
-func (i *Input) update() {
+func (i *InputHandler) update() {
 	for index, state := range i.buttonStates {
 
 		if state == KeyStatePrePressed {
@@ -168,16 +168,18 @@ func (i *Input) update() {
 }
 
 //GetMouseX gets the current mouse position on the screen in pixels
-func (i *Input) GetMouseX() int { return i.mouseX }
+func (i *InputHandler) GetMouseX() int { return i.mouseX }
 
 //GetMouseY gets the current mouse position on the screen in pixels
-func (i *Input) GetMouseY() int { return i.mouseY }
+func (i *InputHandler) GetMouseY() int { return i.mouseY }
 
 //GetMousePosition gets the current mouse position
-func (i *Input) GetMousePosition() Vector2 { return NewVector2(float32(i.mouseX), float32(i.mouseY)) }
+func (i *InputHandler) GetMousePosition() Vector2 {
+	return NewVector2(float32(i.mouseX), float32(i.mouseY))
+}
 
 // GetButton gets if the current button is pressed
-func (i *Input) GetButton(button int) bool {
+func (i *InputHandler) GetButton(button int) bool {
 	if i.buttonStates[button] >= KeyStatePressed {
 		return true
 	}
@@ -185,7 +187,7 @@ func (i *Input) GetButton(button int) bool {
 }
 
 // GetButtonDown gets if the current button has started being pressed
-func (i *Input) GetButtonDown(button int) bool {
+func (i *InputHandler) GetButtonDown(button int) bool {
 	if i.buttonStates[button] == KeyStatePressed {
 		return true
 	}
@@ -193,7 +195,7 @@ func (i *Input) GetButtonDown(button int) bool {
 }
 
 //GetButtonUp gets if the current button was released
-func (i *Input) GetButtonUp(button int) bool {
+func (i *InputHandler) GetButtonUp(button int) bool {
 	if i.buttonStates[button] == KeyStateRelease {
 		return true
 	}

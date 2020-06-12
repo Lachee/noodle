@@ -521,18 +521,34 @@ func (v Vector4) Max(v2 Vector4) Vector4 {
 	}
 }
 
-//Transformation properties
+//Transform is a structure of tranlsation, rotation and scale properties
 type Transform struct {
-	Translation Vector3
-	Rotation    Quaternion
-	Scale       Vector3
+	Position Vector3
+	Rotation Quaternion
+	Scale    Vector3
 }
 
 //NewTransform creates a new transform
 func NewTransform(translation Vector3, rotation Quaternion, scale Vector3) Transform {
 	return Transform{
-		Translation: translation,
-		Rotation:    rotation,
-		Scale:       scale,
+		Position: translation,
+		Rotation: rotation,
+		Scale:    scale,
+	}
+}
+
+//Transform2D is a structure of tranlsation, rotation and scale properties
+type Transform2D struct {
+	Position Vector2
+	Rotation float32
+	Scale    Vector2
+}
+
+//NewTransform2D creates a new transform
+func NewTransform2D(translation Vector2, rotation float32, scale Vector2) Transform2D {
+	return Transform2D{
+		Position: translation,
+		Rotation: rotation,
+		Scale:    scale,
 	}
 }

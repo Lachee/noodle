@@ -1,4 +1,3 @@
-// +build js,wasm
 package noodle
 
 /* Here is a list of interesting Readings
@@ -23,7 +22,7 @@ var (
 	document        js.Value
 	canvas          js.Value
 	frameRenderFunc js.Func
-	input           *Input
+	m_input         *InputHandler
 	app             Application
 	width           int
 	height          int
@@ -44,9 +43,9 @@ func GetDeltaTime() float64 { return deltaTime }
 //DT returns a less accurate version of GetDeltaTime, for all your 32bit mathmatic needs.
 func DT() float32 { return float32(deltaTime) }
 
-//GetInput returns the current input manager
-func GetInput() *Input {
-	return input
+//Input returns the current input handler
+func Input() *InputHandler {
+	return m_input
 }
 
 //Width gets the width of the screen
@@ -63,7 +62,7 @@ func Height() int {
 func Initialize(application Application) {
 	app = application
 
-	input = newInput()
+	m_input = newInput()
 	document = js.Global().Get("document")
 	canvas = document.Call("getElementById", "gocanvas")
 
@@ -100,7 +99,7 @@ func Initialize(application Application) {
 		rect := canvas.Call("getBoundingClientRect")
 		x := evt.Get("clientX").Int() - rect.Get("left").Int()
 		y := evt.Get("clientY").Int() - rect.Get("top").Int()
-		input.setMousePosition(x, y)
+		m_input.setMousePosition(x, y)
 		return nil
 	})
 	defer onMouseChangeEvent.Release()
@@ -110,7 +109,7 @@ func Initialize(application Application) {
 	onMouseUpEvent := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		evt := args[0]
 		button := evt.Get("button").Int()
-		input.setMouseUp(button)
+		m_input.setMouseUp(button)
 		return nil
 	})
 	defer onMouseChangeEvent.Release()
@@ -120,13 +119,14 @@ func Initialize(application Application) {
 	onMouseDownEvent := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		evt := args[0]
 		button := evt.Get("button").Int()
-		input.setMouseDown(button)
+		m_input.setMouseDown(button)
 		return nil
 	})
 	defer onMouseChangeEvent.Release()
 	canvas.Call("addEventListener", "mousedown", onMouseDownEvent)
 
 	//Begin rendering
+	GL.Viewport(0, 0, Width(), Height())
 	frameRenderFunc = js.FuncOf(onRequestAnimationFrame)
 	defer frameRenderFunc.Release()
 	js.Global().Call("requestAnimationFrame", frameRenderFunc)
@@ -146,7 +146,7 @@ func onRequestAnimationFrame(this js.Value, args []js.Value) interface{} {
 	frameTime = time
 
 	//Update the input
-	input.update()
+	m_input.update()
 
 	//Call update on the Application
 	app.Update(float32(deltaTime))

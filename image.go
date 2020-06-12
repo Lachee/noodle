@@ -29,8 +29,8 @@ type Sprite struct {
 }
 
 func (spr *Sprite) Texture() *Texture { return spr.Source }
-func (spr *Sprite) Width() int        { return int(spr.Rectangle.X) }
-func (spr *Sprite) Height() int       { return int(spr.Rectangle.Y) }
+func (spr *Sprite) Width() int        { return int(spr.Rectangle.Width) }
+func (spr *Sprite) Height() int       { return int(spr.Rectangle.Height) }
 func (spr *Sprite) Slice() (float32, float32, float32, float32) {
 	invTexWidth := 1.0 / float32(spr.Source.Width())
 	invTexHeight := 1.0 / float32(spr.Source.Height())
@@ -40,6 +40,10 @@ func (spr *Sprite) Slice() (float32, float32, float32, float32) {
 	u2 := (spr.Rectangle.X + spr.Rectangle.Width) * invTexWidth
 	v2 := (spr.Rectangle.Y + spr.Rectangle.Height) * invTexHeight
 	return u, v, u2, v2
+}
+
+func NewSprite(source *Texture, rectangle Rectangle) *Sprite {
+	return &Sprite{source, rectangle}
 }
 
 //Image is a CPU image
@@ -124,6 +128,11 @@ func (i *Image) IsPowerOf2() bool {
 	w := i.Width()
 	h := i.Height()
 	return ((w & (w - 1)) == 0) && ((h & (h - 1)) == 0)
+}
+
+//CreateTexture creates a new texture
+func (i *Image) CreateTexture() *Texture {
+	return NewTexture(i)
 }
 
 //TextureFilter  is the filter to use on a texture
