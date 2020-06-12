@@ -7,7 +7,7 @@ import (
 
 //Based Heavily from https://github.com/ajhager/engi/blob/master/b.go
 
-const batchMaxSize = 20000
+const batchMaxSize = 50000
 
 type SpriteRenderer struct {
 	shader       *Shader
@@ -98,6 +98,12 @@ func (b *SpriteRenderer) Begin() *SpriteRenderer {
 
 	b.drawing = true
 	GL.UseProgram(b.shader.GetProgram())
+
+	//Set the projection X and Y
+	b.projX = float32(Width()) / 2.0
+	b.projY = float32(Height()) / 2.0
+	GL.Uniform2f(b.ufProjection, b.projX, b.projY)
+
 	return b
 }
 
@@ -124,11 +130,6 @@ func (b *SpriteRenderer) flush() {
 
 	//Bind the previous texture
 	b.lastTexture.Bind()
-
-	//Set the projection X and Y
-	b.projX = float32(Width()) / 2.0
-	b.projY = float32(Height()) / 2.0
-	GL.Uniform2f(b.ufProjection, b.projX, b.projY)
 
 	//Draw the buffer
 	GL.BufferSubData(GlArrayBuffer, 0, b.vertices)

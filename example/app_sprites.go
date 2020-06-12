@@ -30,8 +30,8 @@ type Ball struct {
 func (ball *Ball) update(dt float32) {
 	ball.transform.Position.X += ball.velocity.X * dt
 	ball.transform.Position.Y += -ball.velocity.Y * dt
-	ball.transform.Rotation += ball.angularVelocity * dt * ball.angularVelocitySign
-	ball.velocity.Y += -0.0005 * dt
+
+	//ball.transform.Rotation += ball.angularVelocity * dt * ball.angularVelocitySign
 
 	if ball.transform.Position.X < 0 {
 		ball.velocity.X *= -1
@@ -43,6 +43,7 @@ func (ball *Ball) update(dt float32) {
 		ball.angularVelocitySign = -1
 	}
 
+	ball.velocity.Y += -0.0005 * dt
 	if ball.transform.Position.Y > float32(n.Height()-ball.sprite.Height()) {
 		ball.velocity.Y *= -.90
 		ball.transform.Position.Y = float32(n.Height() - ball.sprite.Height())
@@ -51,11 +52,15 @@ func (ball *Ball) update(dt float32) {
 }
 
 func (app *SpriteApp) PrepareImage() (*n.Image, error) {
-	return n.LoadImage("resources/tilefat.png") // The image URL
+	return n.LoadImage("resources/tile.png") // The image URL
 }
 
 func (app *SpriteApp) Start() bool {
 
+	//Setup the canvas
+	n.SetCanvasSize(400, 300)
+
+	//Prepare the image
 	image, err := app.PrepareImage()
 	if err != nil {
 		log.Fatalln("Failed to spawn image", err)
@@ -73,10 +78,10 @@ func (app *SpriteApp) Start() bool {
 //Update occurs once a frame
 func (app *SpriteApp) Update(dt float32) {
 	if n.Input().GetButton(0) {
-		for i := 0; i < 10; i++ {
+		for i := 0; i < 100; i++ {
 			ball := &Ball{
 				sprite:              app.sprite,
-				transform:           n.NewTransform2D(Vector2{10, 10}, 0, Vector2{1, 1}),
+				transform:           n.NewTransform2D(Vector2{rand.Float32() * 500, rand.Float32() * 500}, 0, Vector2{1, 1}),
 				origin:              Vector2{0.5, 0.5},
 				velocity:            Vector2{rand.Float32() * 0.5, 0},
 				angularVelocity:     rand.Float32(),
@@ -98,8 +103,7 @@ func (app *SpriteApp) Update(dt float32) {
 //Render occurs when the screen needs updating
 func (app *SpriteApp) Render() {
 
-	n.GL.Enable(n.GlDepthTest)
-	n.GL.Clear(n.GlColorBufferBit | n.GlDepthBufferBit)
+	n.GL.Clear(n.GlColorBufferBit)
 
 	app.batch.Begin()
 

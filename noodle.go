@@ -24,11 +24,15 @@ var (
 	frameRenderFunc js.Func
 	m_input         *InputHandler
 	app             Application
-	width           int
-	height          int
-	texture         *Texture
-	frameTime       float64
-	deltaTime       float64
+
+	width  int
+	height int
+
+	texture   *Texture
+	frameTime float64
+	deltaTime float64
+
+	awaiter chan int
 
 	//AlwaysDraw continously draws
 	AlwaysDraw = true
@@ -50,16 +54,16 @@ func Input() *InputHandler {
 
 //Width gets the width of the screen
 func Width() int {
-	return canvas.Get("width").Int()
+	return width
 }
 
 //Height gets the width of the screen
 func Height() int {
-	return canvas.Get("height").Int()
+	return height
 }
 
 //Initialize sets up the Noodle renderer
-func Initialize(application Application) {
+func Run(application Application) int {
 	app = application
 
 	m_input = newInput()
@@ -69,10 +73,8 @@ func Initialize(application Application) {
 	//Set the width and height of the canvas to conver the entire screen
 	width = document.Get("body").Get("clientWidth").Int()
 	height = document.Get("body").Get("clientHeight").Int()
-	canvas.Set("width", width)
-	canvas.Set("height", height)
-
-	done := make(chan struct{}, 0)
+	SetCanvasSize(width, height)
+	awaiter = make(chan int, 0)
 
 	//Get the GL context
 	context := canvas.Call("getContext", "webgl")
@@ -81,7 +83,7 @@ func Initialize(application Application) {
 	}
 	if context.IsUndefined() {
 		js.Global().Call("alert", "browser might not support webgl")
-		return
+		return 0
 	}
 
 	//Create a new GL instance
@@ -90,7 +92,7 @@ func Initialize(application Application) {
 	//Setup the animation frame
 	if !app.Start() {
 		log.Println("Failed to start the application")
-		return
+		return 0
 	}
 
 	//Record canvas events
@@ -130,12 +132,25 @@ func Initialize(application Application) {
 	frameRenderFunc = js.FuncOf(onRequestAnimationFrame)
 	defer frameRenderFunc.Release()
 	js.Global().Call("requestAnimationFrame", frameRenderFunc)
-	<-done
+	return <-awaiter
+}
+
+//SetCanvasSize the size of the canvas
+func SetCanvasSize(w, h int) {
+	canvas.Set("width", w)
+	canvas.Set("height", h)
+	width = canvas.Get("width").Int()
+	height = canvas.Get("height").Int()
+	log.Println("resized canvas")
 }
 
 //RequestRedraw requests for a new animation frame
 func RequestRedraw() {
 	js.Global().Call("requestAnimationFrame", frameRenderFunc)
+}
+
+func Exit() {
+	awaiter <- 1
 }
 
 //onRequestAnimationFrame callback for animations

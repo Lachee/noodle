@@ -1,6 +1,10 @@
 package main
 
-import "github.com/lachee/noodle"
+import (
+	"log"
+
+	"github.com/lachee/noodle"
+)
 
 //Aliases are defined in aliases.go
 
@@ -11,7 +15,10 @@ func main() {
 	//app = &NineSliceApp{}
 	app = &SpriteApp{}
 
-	noodle.Initialize(app)
+	//This is blocking. Everything after this happens in the application
+	// It will return an exit code
+	exitCode := noodle.Run(app)
+	log.Println("Exited with code", exitCode)
 }
 
 //BaseApplication handles the game. Put your variables in here
