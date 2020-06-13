@@ -8,6 +8,7 @@ import (
 	n "github.com/lachee/noodle"
 )
 
+//RotatingCubeApp shows off the 3D capabilities
 type RotatingCubeApp struct {
 	vertexBuffer n.WebGLBuffer
 	colorBuffer  n.WebGLBuffer
@@ -30,7 +31,7 @@ type RotatingCubeApp struct {
 	texture  *n.Texture
 }
 
-func (app *RotatingCubeApp) PrepareImage() (*n.Image, error) {
+func (app *RotatingCubeApp) prepareImage() (*n.Image, error) {
 
 	//Size of the image
 	const width = 255
@@ -53,6 +54,7 @@ func (app *RotatingCubeApp) PrepareImage() (*n.Image, error) {
 	//return n.LoadImage("resources/moomin.png") // The image URL
 }
 
+//Start is called by the noodle engine when ready
 func (app *RotatingCubeApp) Start() bool {
 
 	// Create vertex buffer
@@ -62,7 +64,7 @@ func (app *RotatingCubeApp) Start() bool {
 	app.uvBuffer = n.GL.NewBuffer(n.GlArrayBuffer, rotCubeUV, n.GlStaticDraw)
 
 	// == Load the cube image and the shaders
-	image, err := app.PrepareImage()
+	image, err := app.prepareImage()
 	if err != nil {
 		log.Fatalln("Failed to load image", err)
 		return false

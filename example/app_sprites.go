@@ -20,6 +20,7 @@ type SpriteApp struct {
 	ballCount int
 }
 
+//Ball structure represents a sprite that will bounce around
 type Ball struct {
 	sprite              *n.Sprite
 	transform           Transform2D
@@ -55,17 +56,13 @@ func (ball *Ball) update(dt float32) {
 	}
 }
 
-func (app *SpriteApp) PrepareImage() (*n.Image, error) {
-	return n.LoadImage("resources/snufkin.gif") // The image URL
-}
-
+//Start is called by the noodle engine when ready
 func (app *SpriteApp) Start() bool {
-
-	//Setup the canvas
+	//Setup the canvasss
 	//n.SetCanvasSize(400, 300)
 
 	//Prepare the image
-	image, err := app.PrepareImage()
+	image, err := n.LoadImage("resources/snufkin.gif") // The image URL
 	if err != nil {
 		log.Fatalln("Failed to spawn image", err)
 		return false

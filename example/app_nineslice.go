@@ -7,6 +7,7 @@ import (
 	n "github.com/lachee/noodle"
 )
 
+//NineSliceApp shows an example of a nine-slice shader in use
 type NineSliceApp struct {
 	vertexBuffer n.WebGLBuffer
 	colorBuffer  n.WebGLBuffer
@@ -36,10 +37,8 @@ type NineSliceApp struct {
 	dimension Vector2 //Translated size of the geometry
 }
 
-func (app *NineSliceApp) PrepareImage() (*n.Image, error) {
-	return n.LoadImage("resources/tile.png") // The image URL
-}
 
+//Start is called by the noodle engine when ready
 func (app *NineSliceApp) Start() bool {
 
 	// Create vertex buffer
@@ -50,7 +49,7 @@ func (app *NineSliceApp) Start() bool {
 
 	// == Load the cube image and the shaders
 	app.textureBorder = 5 // Border Size of the image
-	image, err := app.PrepareImage()
+	image, err := n.LoadImage("resources/tile.png") // The image URL
 	if err != nil {
 		log.Fatalln("Failed to load image", err)
 		return false
