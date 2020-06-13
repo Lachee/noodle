@@ -1,4 +1,3 @@
-//Borrowed from https://github.com/bobcob7/wasm-rotating-cube/blob/master/gltypes/arrays.go
 package noodle
 
 import (
@@ -9,6 +8,7 @@ import (
 	"unsafe"
 )
 
+// Shamelessly stolen from https://github.com/bobcob7/wasm-rotating-cube/blob/master/gltypes/arrays.go
 // Shamelessly stolen from: https://github.com/golang/go/issues/32402
 // Thanks hajimehoshi
 func sliceToByteSlice(s interface{}) []byte {

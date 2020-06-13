@@ -22,7 +22,7 @@ var (
 	document        js.Value
 	canvas          js.Value
 	frameRenderFunc js.Func
-	m_input         *InputHandler
+	inputHandler         *InputHandler
 	app             Application
 
 	width  int
@@ -49,7 +49,7 @@ func DT() float32 { return float32(deltaTime) }
 
 //Input returns the current input handler
 func Input() *InputHandler {
-	return m_input
+	return inputHandler
 }
 
 //Width gets the width of the screen
@@ -62,11 +62,11 @@ func Height() int {
 	return height
 }
 
-//Initialize sets up the Noodle renderer
+//Run setups the WebGL context and runs the application. It is blocking and returns an exit code if Exit() is ever called.
 func Run(application Application) int {
 	app = application
 
-	m_input = newInput()
+	inputHandler = newInput()
 	document = js.Global().Get("document")
 	canvas = document.Call("getElementById", "gocanvas")
 
@@ -77,9 +77,10 @@ func Run(application Application) int {
 	awaiter = make(chan int, 0)
 
 	//Get the GL context
-	context := canvas.Call("getContext", "webgl")
+	contextOptions := js.Global().Get("JSON").Call("parse", "{ \"desynchronized\": true }")
+	context := canvas.Call("getContext", "webgl", contextOptions)
 	if context.IsUndefined() {
-		context = canvas.Call("getContext", "experimental-webgl")
+		context = canvas.Call("getContext", "experimental-webgl", contextOptions)
 	}
 	if context.IsUndefined() {
 		js.Global().Call("alert", "browser might not support webgl")
@@ -98,20 +99,21 @@ func Run(application Application) int {
 	//Record canvas events
 	onMouseChangeEvent := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		evt := args[0]
-		rect := canvas.Call("getBoundingClientRect")
-		x := evt.Get("clientX").Int() - rect.Get("left").Int()
-		y := evt.Get("clientY").Int() - rect.Get("top").Int()
-		m_input.setMousePosition(x, y)
+		x := evt.Get("offsetX").Int()
+		y := evt.Get("offsetY").Int()
+		inputHandler.setMousePosition(x, y)
+
 		return nil
 	})
 	defer onMouseChangeEvent.Release()
-	canvas.Call("addEventListener", "mousemove", onMouseChangeEvent)
+	canvas.Call("addEventListener", "mousemove", onMouseChangeEvent, false)
 
 	//Record canvas events
 	onMouseUpEvent := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		evt := args[0]
 		button := evt.Get("button").Int()
-		m_input.setMouseUp(button)
+		inputHandler.setMouseUp(button)
+
 		return nil
 	})
 	defer onMouseChangeEvent.Release()
@@ -121,14 +123,15 @@ func Run(application Application) int {
 	onMouseDownEvent := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		evt := args[0]
 		button := evt.Get("button").Int()
-		m_input.setMouseDown(button)
+		inputHandler.setMouseDown(button)
+
 		return nil
 	})
 	defer onMouseChangeEvent.Release()
 	canvas.Call("addEventListener", "mousedown", onMouseDownEvent)
 
 	//Begin rendering
-	GL.Viewport(0, 0, Width(), Height())
+	GL.Viewport(0, 0, width, height)
 	frameRenderFunc = js.FuncOf(onRequestAnimationFrame)
 	defer frameRenderFunc.Release()
 	js.Global().Call("requestAnimationFrame", frameRenderFunc)
@@ -149,6 +152,7 @@ func RequestRedraw() {
 	js.Global().Call("requestAnimationFrame", frameRenderFunc)
 }
 
+//Exit the application
 func Exit() {
 	awaiter <- 1
 }
@@ -161,7 +165,7 @@ func onRequestAnimationFrame(this js.Value, args []js.Value) interface{} {
 	frameTime = time
 
 	//Update the input
-	m_input.update()
+	inputHandler.update()
 
 	//Call update on the Application
 	app.Update(float32(deltaTime))

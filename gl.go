@@ -8,12 +8,16 @@ import (
 
 //WebGLBuffer the js representation of a buffer
 type WebGLBuffer = js.Value
+//WebGLShader is a JS representation of a shader
 type WebGLShader = js.Value
+//WebGLShaderProgram is a JS representation of a shader program
 type WebGLShaderProgram = js.Value
+//WebGLUniformLocation is a JS representation of a uniform location
 type WebGLUniformLocation = js.Value
+//WebGLTexture is a JS representation of a texture
 type WebGLTexture = js.Value
 
-//GL is a helper class that wraps webWebGL
+//WebGL is the base class that wraps GL functionality.
 type WebGL struct {
 	context js.Value
 }
@@ -256,6 +260,7 @@ func (gl *WebGL) TexParameterf(target GLEnum, param GLEnum, value float64) {
 }
 
 //=== Uniform Setting
+
 //Uniform1f specifies values of uniform variables
 func (gl *WebGL) Uniform1f(location WebGLUniformLocation, value float32) {
 	gl.context.Call("uniform1f", location, value)

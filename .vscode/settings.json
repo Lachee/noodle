@@ -1,0 +1,9 @@
+{
+    "go.toolsEnvVars": {
+        "GOOS": "js",
+        "GOARCH": "wasm"
+    },
+    "go.vetFlags": [
+        "-composites false"
+    ]
+}

@@ -1,8 +1,10 @@
 package noodle
 
+//Key is a keyboard key
 type Key int
 
-var (
+const (
+	//Dash -
 	Dash         = Key(189)
 	Apostrophe   = Key(222)
 	Semicolon    = Key(186)
@@ -107,21 +109,21 @@ var (
 	NumEnter     = Key(13)
 )
 
-type KeyState int
-
+type keyState int
 const (
-	KeyStateUp KeyState = iota
-	KeyStatePrePressed
-	KeyStatePressed
-	KeyStateDown
-	KeyStatePreRelease
-	KeyStateRelease
+	keyStateUp keyState = iota
+	keyStatePrePressed
+	keyStatePressed
+	keyStateDown
+	keyStatePreRelease
+	keyStateRelease
 )
 
+//InputHandler handles the different states of the input
 type InputHandler struct {
 	mouseX       int
 	mouseY       int
-	buttonStates [5]KeyState
+	buttonStates [5]keyState
 }
 
 func newInput() *InputHandler {
@@ -140,29 +142,29 @@ func (i *InputHandler) setMousePosition(x, y int) {
 //Sets the mouse Down State
 func (i *InputHandler) setMouseDown(button int) {
 	//println("Mouse Down", button)
-	i.buttonStates[button] = KeyStatePrePressed
+	i.buttonStates[button] = keyStatePrePressed
 }
 
 //Sets the mouse up state
 func (i *InputHandler) setMouseUp(button int) {
 	//println("Mouse Up", button)
-	i.buttonStates[button] = KeyStatePreRelease
+	i.buttonStates[button] = keyStatePreRelease
 }
 
 //Processes the input changes
 func (i *InputHandler) update() {
 	for index, state := range i.buttonStates {
 
-		if state == KeyStatePrePressed {
-			i.buttonStates[index] = KeyStatePressed
-		} else if state == KeyStatePressed {
-			i.buttonStates[index] = KeyStateDown
+		if state == keyStatePrePressed {
+			i.buttonStates[index] = keyStatePressed
+		} else if state == keyStatePressed {
+			i.buttonStates[index] = keyStateDown
 		}
 
-		if state == KeyStatePreRelease {
-			i.buttonStates[index] = KeyStateRelease
-		} else if state == KeyStateRelease {
-			i.buttonStates[index] = KeyStateUp
+		if state == keyStatePreRelease {
+			i.buttonStates[index] = keyStateRelease
+		} else if state == keyStateRelease {
+			i.buttonStates[index] = keyStateUp
 		}
 	}
 }
@@ -180,7 +182,7 @@ func (i *InputHandler) GetMousePosition() Vector2 {
 
 // GetButton gets if the current button is pressed
 func (i *InputHandler) GetButton(button int) bool {
-	if i.buttonStates[button] >= KeyStatePressed {
+	if i.buttonStates[button] >= keyStatePressed {
 		return true
 	}
 	return false
@@ -188,7 +190,7 @@ func (i *InputHandler) GetButton(button int) bool {
 
 // GetButtonDown gets if the current button has started being pressed
 func (i *InputHandler) GetButtonDown(button int) bool {
-	if i.buttonStates[button] == KeyStatePressed {
+	if i.buttonStates[button] == keyStatePressed {
 		return true
 	}
 	return false
@@ -196,7 +198,7 @@ func (i *InputHandler) GetButtonDown(button int) bool {
 
 //GetButtonUp gets if the current button was released
 func (i *InputHandler) GetButtonUp(button int) bool {
-	if i.buttonStates[button] == KeyStateRelease {
+	if i.buttonStates[button] == keyStateRelease {
 		return true
 	}
 	return false

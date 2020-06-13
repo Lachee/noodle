@@ -8,9 +8,11 @@ import (
 )
 
 //Noodle Type Aliases are defined in aliases.go
+const appSpritesAllowRotate = true
 
 //SpriteApp tests the sprite renderer
 type SpriteApp struct {
+	cursor    *n.Sprite
 	sprite    *n.Sprite
 	texture   *n.Texture
 	batch     *n.SpriteRenderer
@@ -31,7 +33,9 @@ func (ball *Ball) update(dt float32) {
 	ball.transform.Position.X += ball.velocity.X * dt
 	ball.transform.Position.Y += -ball.velocity.Y * dt
 
-	//ball.transform.Rotation += ball.angularVelocity * dt * ball.angularVelocitySign
+	if appSpritesAllowRotate {
+		ball.transform.Rotation += ball.angularVelocity * dt * ball.angularVelocitySign
+	}
 
 	if ball.transform.Position.X < 0 {
 		ball.velocity.X *= -1
@@ -52,13 +56,13 @@ func (ball *Ball) update(dt float32) {
 }
 
 func (app *SpriteApp) PrepareImage() (*n.Image, error) {
-	return n.LoadImage("resources/tile.png") // The image URL
+	return n.LoadImage("resources/snufkin.gif") // The image URL
 }
 
 func (app *SpriteApp) Start() bool {
 
 	//Setup the canvas
-	n.SetCanvasSize(400, 300)
+	//n.SetCanvasSize(400, 300)
 
 	//Prepare the image
 	image, err := app.PrepareImage()
@@ -72,16 +76,24 @@ func (app *SpriteApp) Start() bool {
 	app.sprite = n.NewSprite(app.texture, Rectangle{0, 0, float32(app.texture.Width()), float32(app.texture.Height())})
 	app.batch = n.NewSpriteRenderer()
 
+	cursor, _ := n.LoadImage("resources/cursors.svg")
+	cursorTexture := cursor.CreateTexture()
+	app.cursor = n.NewSprite(cursorTexture, Rectangle{0, 0, float32(cursorTexture.Width()) / 8.0, float32(cursorTexture.Height()) / 8.0})
+
 	return true
 }
 
 //Update occurs once a frame
 func (app *SpriteApp) Update(dt float32) {
 	if n.Input().GetButton(0) {
-		for i := 0; i < 100; i++ {
+
+		mouse := n.Input().GetMousePosition()
+		t := n.NewTransform2D(mouse, 0, Vector2{1, 1})
+
+		for i := 0; i < 1; i++ {
 			ball := &Ball{
 				sprite:              app.sprite,
-				transform:           n.NewTransform2D(Vector2{rand.Float32() * 500, rand.Float32() * 500}, 0, Vector2{1, 1}),
+				transform:           t,
 				origin:              Vector2{0.5, 0.5},
 				velocity:            Vector2{rand.Float32() * 0.5, 0},
 				angularVelocity:     rand.Float32(),
@@ -110,6 +122,11 @@ func (app *SpriteApp) Render() {
 	for _, ball := range app.balls {
 		app.batch.Draw(ball.sprite, ball.origin, ball.transform, 0xffffff, 1)
 	}
+
+	mouse := n.Input().GetMousePosition()
+	t := n.NewTransform2D(mouse, 0, Vector2{1, 1})
+	app.batch.Draw(app.cursor, Vector2{0.5, 0.5}, t, 0xffffff, 1)
+
 	//app.batch.Draw(app.sprite, Vector2{0, 0}, Vector2{0, 0}, Vector2{1, 1}, 0, 0xffffff, 1)
 	app.batch.End()
 }

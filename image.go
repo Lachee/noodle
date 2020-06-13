@@ -18,8 +18,8 @@ type UVTile interface {
 	//Height is the size in pixels of the source image
 	Height() int
 
-	//Slice returns uv extremes
-	Slice() (float32, float32, float32, float32)
+	//Slice returns uv extremes, UV Min and UV Max
+	Slice() (Vector2, Vector2)
 }
 
 //Sprite is a basic implementation of a UVTile. Its a single texture with a rectangle slice.
@@ -28,10 +28,17 @@ type Sprite struct {
 	Rectangle Rectangle
 }
 
+//Texture gets the current sprit texture
 func (spr *Sprite) Texture() *Texture { return spr.Source }
+
+//Width gets the sprites width in pixels
 func (spr *Sprite) Width() int        { return int(spr.Rectangle.Width) }
+
+//Height gets the sprites height in pixels
 func (spr *Sprite) Height() int       { return int(spr.Rectangle.Height) }
-func (spr *Sprite) Slice() (float32, float32, float32, float32) {
+
+//Slice generates a UV slice for the SpriteRenderer
+func (spr *Sprite) Slice() (Vector2, Vector2) {
 	invTexWidth := 1.0 / float32(spr.Source.Width())
 	invTexHeight := 1.0 / float32(spr.Source.Height())
 
@@ -39,9 +46,10 @@ func (spr *Sprite) Slice() (float32, float32, float32, float32) {
 	v := spr.Rectangle.Y * invTexHeight
 	u2 := (spr.Rectangle.X + spr.Rectangle.Width) * invTexWidth
 	v2 := (spr.Rectangle.Y + spr.Rectangle.Height) * invTexHeight
-	return u, v, u2, v2
+	return Vector2{u, v}, Vector2{u2, v2}
 }
 
+//NewSprite a new sprite
 func NewSprite(source *Texture, rectangle Rectangle) *Sprite {
 	return &Sprite{source, rectangle}
 }
@@ -175,6 +183,8 @@ type Texture struct {
 	height    int
 	noMipMaps bool
 }
+
+
 
 //NewTexture a new Texture from the image
 func NewTexture(image *Image) *Texture {

@@ -7,8 +7,9 @@ import (
 
 //Based Heavily from https://github.com/ajhager/engi/blob/master/b.go
 
-const batchMaxSize = 50000
+const batchMaxSize = 10000
 
+//SpriteRenderer renders UVTiles in a batched manner
 type SpriteRenderer struct {
 	shader       *Shader
 	inPosition   int
@@ -31,6 +32,7 @@ type SpriteRenderer struct {
 	index       int
 }
 
+//NewSpriteRenderer creates a new sprite renderer
 func NewSpriteRenderer() *SpriteRenderer {
 	b := &SpriteRenderer{}
 
@@ -247,7 +249,11 @@ func (b *SpriteRenderer) Draw(r UVTile, origin Vector2, transform Transform2D, c
 
 	idx := b.index * 20
 
-	u, v, u2, v2 := r.Slice()
+	min, max := r.Slice()
+	u := min.X
+	v := min.Y
+	u2 := max.X
+	v2 := max.Y
 
 	b.vertices[idx+0] = x1
 	b.vertices[idx+1] = y1
@@ -273,7 +279,7 @@ func (b *SpriteRenderer) Draw(r UVTile, origin Vector2, transform Transform2D, c
 	b.vertices[idx+18] = v2
 	b.vertices[idx+19] = tint
 
-	b.index += 1
+	b.index++
 
 	if b.index >= batchMaxSize {
 		b.flush()
@@ -288,24 +294,11 @@ uniform vec2 uf_Projection;
 varying vec4 var_Color;
 varying vec2 var_TexCoords;
 const vec2 center = vec2(-1.0, 1.0);
-void main() {
-  var_Color = in_Color;
-  var_TexCoords = in_TexCoords;
-	gl_Position = vec4(in_Position.x / uf_Projection.x + center.x,
-										 in_Position.y / -uf_Projection.y + center.y,
-										 0.0, 1.0);
-}`
+void main() { var_Color = in_Color; var_TexCoords = in_TexCoords;	gl_Position = vec4(in_Position.x / uf_Projection.x + center.x, in_Position.y / -uf_Projection.y + center.y,  0.0, 1.0); }`
 
 var spriteRendererFragCode = `
-#ifdef GL_ES
-#define LOWP lowp
 precision mediump float;
-#else
-#define LOWP
-#endif
 varying vec4 var_Color;
 varying vec2 var_TexCoords;
 uniform sampler2D uf_Texture;
-void main (void) {
-  gl_FragColor = var_Color * texture2D(uf_Texture, var_TexCoords);
-}`
+void main (void) { gl_FragColor = var_Color * texture2D(uf_Texture, var_TexCoords); }`
