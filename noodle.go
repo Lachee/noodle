@@ -1,3 +1,4 @@
+//Package noodle is a WebGL game engine, designed for low level access for fast and efficent 3D applications
 package noodle
 
 /* Here is a list of interesting Readings

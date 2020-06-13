@@ -4,6 +4,7 @@
         "GOARCH": "wasm"
     },
     "go.vetFlags": [
-        "-composites false"
-    ]
+        "-composites=false"
+    ],
+    "go.vetOnSave": "workspace"
 }

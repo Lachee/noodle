@@ -141,11 +141,11 @@ func (app *NineSliceApp) Render() {
 }
 
 var ninePlaneVerts = []Vector3{
-	Vector3{0, 0, 0}, Vector3{0, 1, 0},
-	Vector3{1, 1, 0}, Vector3{1, 0, 0},
+	{0, 0, 0}, {0, 1, 0},
+	{1, 1, 0}, {1, 0, 0},
 }
 var ninePlaneUV = []Vector2{
-	Vector2{0, 0}, Vector2{0, 1},
-	Vector2{1, 1}, Vector2{1, 0},
+	{0, 0}, {0, 1},
+	{1, 1}, {1, 0},
 }
 var ninePlaneTris = []uint16{0, 1, 2, 0, 2, 3}
