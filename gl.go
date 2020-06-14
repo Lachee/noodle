@@ -14,6 +14,8 @@ type WebGLShader = js.Value
 type WebGLShaderProgram = js.Value
 //WebGLUniformLocation is a JS representation of a uniform location
 type WebGLUniformLocation = js.Value
+//WebGLAttributeLocation is a representation of a attribute location 
+type WebGLAttributeLocation = int
 //WebGLTexture is a JS representation of a texture
 type WebGLTexture = js.Value
 
@@ -158,17 +160,17 @@ func (gl *WebGL) GetUniformLocation(shaderProgram WebGLShaderProgram, location s
 }
 
 //GetAttribLocation gets a location of an attribute
-func (gl *WebGL) GetAttribLocation(shaderProgram WebGLShaderProgram, attribute string) int {
+func (gl *WebGL) GetAttribLocation(shaderProgram WebGLShaderProgram, attribute string) WebGLAttributeLocation {
 	return gl.context.Call("getAttribLocation", shaderProgram, attribute).Int()
 }
 
 //VertexAttribPointer binds the buffer currently bound to gl.ARRAY_BUFFER to a generic vertex attribute of the current vertex buffer object and specifies its layout.
-func (gl *WebGL) VertexAttribPointer(position int, size int, valueType GLEnum, normalized bool, stride int, offset int) {
+func (gl *WebGL) VertexAttribPointer(position WebGLAttributeLocation, size int, valueType GLEnum, normalized bool, stride int, offset int) {
 	gl.context.Call("vertexAttribPointer", position, size, valueType, normalized, stride, offset)
 }
 
 //EnableVertexAttribArray turns on the generic vertex attribute array at the specified index into the list of attribute arrays.
-func (gl *WebGL) EnableVertexAttribArray(position int) {
+func (gl *WebGL) EnableVertexAttribArray(position WebGLAttributeLocation) {
 	gl.context.Call("enableVertexAttribArray", position)
 }
 
