@@ -6,16 +6,19 @@ import (
 )
 
 //uiRendererVertexLength is how many bytes are in each "vertex" element.
-const uiRendererVertexLength = 28
+const uiRendererVertexLength = 44
 
 //UIRenderer renders UVTiles in a batched manner
 type UIRenderer struct {
+	Zoom float32
+
 	shader *Shader
 
-	inPosition  WebGLAttributeLocation
-	inTexCoords WebGLAttributeLocation
-	inColor     WebGLAttributeLocation
-	inDimension WebGLAttributeLocation
+	inPosition    WebGLAttributeLocation
+	inTexCoords   WebGLAttributeLocation
+	inSliceCoords WebGLAttributeLocation
+	inDimension   WebGLAttributeLocation
+	inColor       WebGLAttributeLocation
 
 	uProjection WebGLUniformLocation
 	uSampler    WebGLUniformLocation
@@ -37,6 +40,8 @@ type UIRenderer struct {
 func NewUIRenderer() *UIRenderer {
 	b := &UIRenderer{}
 
+	b.Zoom = 2.0
+
 	//Prepare the shader
 	var shaderError error
 	b.shader, shaderError = LoadShaderFromURL("resources/shader/ui.vert", "resources/shader/ui.frag")
@@ -47,6 +52,7 @@ func NewUIRenderer() *UIRenderer {
 
 	b.inPosition = b.shader.GetAttribLocation("position")
 	b.inTexCoords = b.shader.GetAttribLocation("texcoords")
+	b.inSliceCoords = b.shader.GetAttribLocation("slicecoords")
 	b.inDimension = b.shader.GetAttribLocation("dimension")
 	b.inColor = b.shader.GetAttribLocation("color")
 
@@ -83,16 +89,23 @@ func NewUIRenderer() *UIRenderer {
 	//Enable them
 	GL.EnableVertexAttribArray(b.inPosition)
 	GL.EnableVertexAttribArray(b.inTexCoords)
+	GL.EnableVertexAttribArray(b.inSliceCoords)
 	GL.EnableVertexAttribArray(b.inDimension)
 	GL.EnableVertexAttribArray(b.inColor)
 
 	//Bind the attributes
 	//these numbers represent the values in the vertices buffer we are pushing, not the shader memory
 	GL.VertexAttribPointer(b.inPosition, 2, GlFloat, false, uiRendererVertexLength, 0)
-	GL.VertexAttribPointer(b.inTexCoords, 2, GlFloat, false, uiRendererVertexLength, 8)
-	GL.VertexAttribPointer(b.inDimension, 2, GlFloat, false, uiRendererVertexLength, 16)
-	GL.VertexAttribPointer(b.inColor, 4, GlUnsignedByte, true, uiRendererVertexLength, 24)
+	GL.VertexAttribPointer(b.inTexCoords, 4, GlFloat, false, uiRendererVertexLength, 8)
+	GL.VertexAttribPointer(b.inSliceCoords, 2, GlFloat, false, uiRendererVertexLength, 24)
+	GL.VertexAttribPointer(b.inDimension, 2, GlFloat, false, uiRendererVertexLength, 32)
+	GL.VertexAttribPointer(b.inColor, 4, GlUnsignedByte, true, uiRendererVertexLength, 40)
 	return b
+}
+
+//Screen2UISpace converts the screen cooridinates to UI coords
+func (b *UIRenderer) Screen2UISpace(screen Vector2) Vector2 {
+	return screen.Scale(b.Zoom)
 }
 
 //Begin starts a UIRenderer
@@ -105,8 +118,8 @@ func (b *UIRenderer) Begin() *UIRenderer {
 	GL.UseProgram(b.shader.GetProgram())
 
 	//Set the projection X and Y
-	projX := float32(Width()) / 2.0
-	projY := float32(Height()) / 2.0
+	projX := float32(Width()) / b.Zoom
+	projY := float32(Height()) / b.Zoom
 	GL.Uniform2f(b.uProjection, projX, projY)
 
 	//Clear the cache
@@ -141,7 +154,7 @@ func (b *UIRenderer) flush() {
 		b.texture = b.sprite.Texture()
 	}
 
-	if b.texture != nil {		
+	if b.texture != nil {
 		b.texture.SetSampler(b.uSampler, 0)
 	}
 
@@ -269,11 +282,11 @@ func (b *UIRenderer) Draw(rect Rectangle, color Color) {
 	tint := color.ToTint()
 
 	//Get the min/max
-	//min, max := b.sprite.Slice()
-	u  := float32(0) //min.X
-	v  := float32(0) //min.Y
-	u2 := float32(1) //max.X
-	v2 := float32(1) //max.Y
+	min, max := b.sprite.Slice()
+	u := min.X
+	v := min.Y
+	u2 := max.X
+	v2 := max.Y
 
 	//Get the dimension
 	dimensions := b.sprite.dimension(rect.Size())
@@ -286,33 +299,51 @@ func (b *UIRenderer) Draw(rect Rectangle, color Color) {
 	b.vertices[idx+1] = y1
 	b.vertices[idx+2] = u
 	b.vertices[idx+3] = v
-	b.vertices[idx+4] = dx
-	b.vertices[idx+5] = dy
-	b.vertices[idx+6] = tint
+	b.vertices[idx+4] = u2
+	b.vertices[idx+5] = v2
+	b.vertices[idx+6] = 0
+	b.vertices[idx+7] = 0
+	b.vertices[idx+8] = dx
+	b.vertices[idx+9] = dy
+	b.vertices[idx+10] = tint
 
-	b.vertices[idx+7] = x4
-	b.vertices[idx+8] = y4
-	b.vertices[idx+9] = u2
-	b.vertices[idx+10] = v
-	b.vertices[idx+11] = dx
-	b.vertices[idx+12] = dy
-	b.vertices[idx+13] = tint
+	b.vertices[idx+11] = x4
+	b.vertices[idx+12] = y4
+	b.vertices[idx+13] = u
+	b.vertices[idx+14] = v
+	b.vertices[idx+15] = u2
+	b.vertices[idx+16] = v2
+	b.vertices[idx+17] = 1
+	b.vertices[idx+18] = 0
+	b.vertices[idx+19] = dx
+	b.vertices[idx+20] = dy
+	b.vertices[idx+21] = tint
 
-	b.vertices[idx+14] = x3
-	b.vertices[idx+15] = y3
-	b.vertices[idx+16] = u2
-	b.vertices[idx+17] = v2
-	b.vertices[idx+18] = dx
-	b.vertices[idx+19] = dy
-	b.vertices[idx+20] = tint
+	b.vertices[idx+22] = x3
+	b.vertices[idx+23] = y3
+	b.vertices[idx+24] = u
+	b.vertices[idx+25] = v
+	b.vertices[idx+26] = u2
+	b.vertices[idx+27] = v2
+	b.vertices[idx+28] = 1
+	b.vertices[idx+29] = 1
+	b.vertices[idx+30] = dx
+	b.vertices[idx+31] = dy
+	b.vertices[idx+32] = tint
 
-	b.vertices[idx+21] = x2
-	b.vertices[idx+22] = y2
-	b.vertices[idx+23] = u
-	b.vertices[idx+24] = v2
-	b.vertices[idx+25] = dx
-	b.vertices[idx+26] = dy
-	b.vertices[idx+27] = tint
+	b.vertices[idx+33] = x2
+	b.vertices[idx+34] = y2
+	b.vertices[idx+35] = u
+	b.vertices[idx+36] = v
+	b.vertices[idx+37] = u2
+	b.vertices[idx+38] = v2
+	b.vertices[idx+39] = 0
+	b.vertices[idx+40] = 1
+	b.vertices[idx+41] = dx
+	b.vertices[idx+42] = dy
+	b.vertices[idx+43] = tint
+
+	//todo: region code hered
 
 	b.index++
 

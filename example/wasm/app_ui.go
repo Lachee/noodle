@@ -40,7 +40,7 @@ func (app *UIApp) Start() bool {
 	//n.SetCanvasSize(400, 300)
 
 	//Prepare the image
-	image, err := n.LoadImage("resources/tilefat.png") // The image URL
+	image, err := n.LoadImage("resources/slice.png") // The image URL
 	if err != nil {
 		log.Fatalln("Failed to spawn image", err)
 		return false
@@ -48,7 +48,8 @@ func (app *UIApp) Start() bool {
 
 	//Setup the texture
 	app.texture = image.CreateTexture()
-	app.sprite = n.NewSliceSprite(app.texture, Rectangle{0, 0, float32(app.texture.Width()), float32(app.texture.Height())}, Vector2{28, 43})
+	tileSize := float32(app.texture.Width()) / 6.0
+	app.sprite = n.NewSliceSprite(app.texture, Rectangle{tileSize * 0, 0, tileSize, float32(app.texture.Height())}, Vector2{3, 4})
 	app.batch = n.NewUIRenderer()
 
 	cursor, _ := n.LoadImage("resources/cursors.svg")
@@ -61,8 +62,8 @@ func (app *UIApp) Start() bool {
 //Update occurs once a frame
 func (app *UIApp) Update(dt float32) {
 	if n.Input().GetButtonDown(0) || app.boxCount == 0 {
-
-		mouse := n.Input().GetMousePosition()
+		//TODO: Create a UI camera
+		mouse := n.Input().GetMousePosition() //.Scale(1/10.0)
 		for i := 0; i < 1; i++ {
 			box := &Box{
 				sprite: app.sprite,

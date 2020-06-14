@@ -1,13 +1,12 @@
 precision mediump float;
 
-varying vec2 vTexCoords;
+varying vec4 vTexCoords;
+varying vec2 vSliceCoords;
 varying vec2 vDimension;
 varying vec4 vColor;
 
 uniform sampler2D uSampler;
 uniform vec2 uBorder;
-
-
 
 float map(float value, float originalMin, float originalMax, float newMin, float newMax) {
     return (value - originalMin) / (originalMax - originalMin) * (newMax - newMin) + newMin;
@@ -22,17 +21,12 @@ float processAxis(float coord, float textureBorder, float windowBorder) {
 }
 
 void main(void) {
-    vec2 uv = vec2(
-        processAxis(vTexCoords.x, uBorder.x, vDimension.x),
-        processAxis(vTexCoords.y, uBorder.y, vDimension.y)
+    vec2 sliced = vec2(
+        processAxis(vSliceCoords.x, uBorder.x, vDimension.x),
+        processAxis(vSliceCoords.y, uBorder.y, vDimension.y)
     );
 
-    //newUV.x = vTextureCoord.x;
-
-
-    //newUV.xy += u_clip.xy / u_clip.wz;
-    //newUV.xy *= u_clip.zw / u_texsize.xy;
-
-	gl_FragColor = vColor * texture2D(uSampler, uv); 
-	//gl_FragColor = vec4(vTexCoords.x*vDimension.x/10.0, vTexCoords.y*vDimension.y/10.0, 0, 1);
+	vec2 size = vTexCoords.zw - vTexCoords.xy;
+	vec2 nuv = vTexCoords.xy + size * sliced;
+	gl_FragColor = vColor * texture2D(uSampler, nuv); 
 }
