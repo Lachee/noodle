@@ -1,3 +1,3 @@
 cp "$(go env GOROOT)/misc/wasm/wasm_exec.js" .
 go build
-./webserver.exe
+./webserver.exe -dir ../../ -dir ../wasm/ -cmd "update-content.bat" -filter **/*.go -resources ../wasm/resources/

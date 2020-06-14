@@ -7,6 +7,7 @@ import (
 	n "github.com/lachee/noodle"
 )
 
+
 //NineSliceApp shows an example of a nine-slice shader in use
 type NineSliceApp struct {
 	vertexBuffer n.WebGLBuffer

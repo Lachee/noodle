@@ -10,9 +10,13 @@
 		<script src="wasm_exec.js"></script>
 		<script>
 			const go = new Go();
-			WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject).then((result) => {
+			WebAssembly.instantiateStreaming(fetch("resources/noodle.wasm"), go.importObject).then((result) => {
 				go.run(result.instance);
 			});
+			const ws = new WebSocket("ws://" + window.location.host + "/listen");
+			ws.addEventListener("message", (event) => { console.log(event); window.location = window.location; });
+			ws.addEventListener("close", (event) => { console.error("Live Watch has terminated"); });
+			function abort() { ws.close(); }
 		</script>
 		<style>
 			body {

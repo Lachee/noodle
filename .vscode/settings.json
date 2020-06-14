@@ -5,5 +5,5 @@
     },
     "go.vetFlags": [
         "-composites=false",
-    ],
+    ]
 }
