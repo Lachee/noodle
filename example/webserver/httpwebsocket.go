@@ -52,6 +52,7 @@ func (p *wsclient) handle(w http.ResponseWriter, r *http.Request) {
 
 //Sends a message to all users
 func (p *wsclient) Broadcast(e payloadEvent) int {
+	log.Println("Broaadcast: ", e)
 	count := 0
 	for _, user := range p.users {
 
@@ -70,7 +71,7 @@ func (p *wsclient) Broadcast(e payloadEvent) int {
 //addUser adds a user to the list. Does not send events because the user is requried to have authorized
 func (p *wsclient) addUser(websocket *websocket.Conn) *User {
 	user := newUser(websocket)
-	log.Println("New user connected: ", user.identifier)
+	//log.Println("New user connected: ", user.identifier)
 	p.users = append(p.users, user)
 	return user
 }
@@ -86,7 +87,7 @@ func (p *wsclient) removeUser(user *User) {
 		}
 	}
 
-	log.Println("User Disconnected", user.identifier)
+	//log.Println("User Disconnected", user.identifier)
 	//Tell everyone this user disconnected
 	//p.Broadcast(UserIdentifyEvent{Identity: user.identifier, DisplayName: user.displayname, State: UserIdentifyDisconnect})
 }
