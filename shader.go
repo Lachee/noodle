@@ -75,7 +75,7 @@ func (shader *Shader) GetUniformLocation(location string) WebGLUniformLocation {
 }
 
 //GetAttribLocation gets a location of an attribute
-func (shader *Shader) GetAttribLocation(attribute string) int {
+func (shader *Shader) GetAttribLocation(attribute string) WebGLAttributeLocation {
 	return GL.GetAttribLocation(shader.program, attribute)
 }
 

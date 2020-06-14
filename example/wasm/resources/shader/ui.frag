@@ -1,19 +1,18 @@
 precision mediump float;
-varying vec3 vColor;
 
-varying highp vec2 vTextureCoord;
+varying vec2 vTexCoords;
+varying vec2 vDimension;
+varying vec4 vColor;
+
 uniform sampler2D uSampler;
-
-uniform vec2 uDimensions;
 uniform vec2 uBorder;
+
 
 
 float map(float value, float originalMin, float originalMax, float newMin, float newMax) {
     return (value - originalMin) / (originalMax - originalMin) * (newMax - newMin) + newMin;
 }
 
-// Helper function, because WET code is bad code
-// Takes in the coordinate on the current axis and the borders
 float processAxis(float coord, float textureBorder, float windowBorder) {
     if (coord < windowBorder)
         return map(coord, 0.0, windowBorder, 0.0, textureBorder) ;
@@ -23,9 +22,9 @@ float processAxis(float coord, float textureBorder, float windowBorder) {
 }
 
 void main(void) {
-    vec2 newUV = vec2(
-        processAxis(vTextureCoord.x, uBorder.x, uDimensions.x),
-        processAxis(vTextureCoord.y, uBorder.y, uDimensions.y)
+    vec2 uv = vec2(
+        processAxis(vTexCoords.x, uBorder.x, vDimension.x),
+        processAxis(vTexCoords.y, uBorder.y, vDimension.y)
     );
 
     //newUV.x = vTextureCoord.x;
@@ -34,5 +33,6 @@ void main(void) {
     //newUV.xy += u_clip.xy / u_clip.wz;
     //newUV.xy *= u_clip.zw / u_texsize.xy;
 
-    gl_FragColor =  texture2D(uSampler, newUV);
+	gl_FragColor = vColor * texture2D(uSampler, uv); 
+	//gl_FragColor = vec4(vTexCoords.x*vDimension.x/10.0, vTexCoords.y*vDimension.y/10.0, 0, 1);
 }

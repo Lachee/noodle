@@ -32,10 +32,10 @@ type Sprite struct {
 func (spr *Sprite) Texture() *Texture { return spr.Source }
 
 //Width gets the sprites width in pixels
-func (spr *Sprite) Width() int        { return int(spr.Rectangle.Width) }
+func (spr *Sprite) Width() int { return int(spr.Rectangle.Width) }
 
 //Height gets the sprites height in pixels
-func (spr *Sprite) Height() int       { return int(spr.Rectangle.Height) }
+func (spr *Sprite) Height() int { return int(spr.Rectangle.Height) }
 
 //Slice generates a UV slice for the SpriteRenderer
 func (spr *Sprite) Slice() (Vector2, Vector2) {
@@ -52,6 +52,50 @@ func (spr *Sprite) Slice() (Vector2, Vector2) {
 //NewSprite a new sprite
 func NewSprite(source *Texture, rectangle Rectangle) *Sprite {
 	return &Sprite{source, rectangle}
+}
+
+//SliceSprite is a sliced texture
+type SliceSprite struct {
+	Source    *Texture
+	Rectangle Rectangle
+	Border    Vector2
+}
+
+//Texture gets the current sprit texture
+func (spr *SliceSprite) Texture() *Texture { return spr.Source }
+
+//Width gets the sprites width in pixels
+func (spr *SliceSprite) Width() int { return int(spr.Rectangle.Width) }
+
+//Height gets the sprites height in pixels
+func (spr *SliceSprite) Height() int { return int(spr.Rectangle.Height) }
+
+//Slice generates a UV slice for the SpriteRenderer
+func (spr *SliceSprite) Slice() (Vector2, Vector2) {
+	invTexWidth := 1.0 / float32(spr.Source.Width())
+	invTexHeight := 1.0 / float32(spr.Source.Height())
+
+	u := spr.Rectangle.X * invTexWidth
+	v := spr.Rectangle.Y * invTexHeight
+	u2 := (spr.Rectangle.X + spr.Rectangle.Width) * invTexWidth
+	v2 := (spr.Rectangle.Y + spr.Rectangle.Height) * invTexHeight
+	return Vector2{u, v}, Vector2{u2, v2}
+}
+
+//dimension gets the dimension value that will be given to the shader
+func (spr *SliceSprite) dimension(scale Vector2) Vector2 {
+	box := spr.Rectangle.Size().Multiply(scale)
+	return spr.Border.DivideV(box)
+}
+
+//relativeBorder gets the border size that is relative to the uv.
+func (spr *SliceSprite) relativeBorder() Vector2 {
+	return spr.Border.DivideV(spr.Rectangle.Size())
+}
+
+//NewSliceSprite a new sprite
+func NewSliceSprite(source *Texture, rectangle Rectangle, border Vector2) *SliceSprite {
+	return &SliceSprite{source, rectangle, border}
 }
 
 //Image is a CPU image
@@ -184,8 +228,6 @@ type Texture struct {
 	noMipMaps bool
 }
 
-
-
 //NewTexture a new Texture from the image
 func NewTexture(image *Image) *Texture {
 	webglTexture := GL.CreateTexture()
@@ -244,11 +286,11 @@ func (tex *Texture) SetImage(image *Image) {
 	//if !tex.noMipMaps && image.IsPowerOf2() {
 	//	GL.GenerateMipmap(tex.target)
 	//} else {
-		//Turn of mips, not square
-		GL.TexParameteri(tex.target, GlTextureWrapS, GlClampToEdge)
-		GL.TexParameteri(tex.target, GlTextureWrapT, GlClampToEdge)
-		GL.TexParameteri(tex.target, GlTextureMinFilter, GlLinear)
-		GL.TexParameteri(tex.target, GlTextureMagFilter, GlLinear)
+	//Turn of mips, not square
+	GL.TexParameteri(tex.target, GlTextureWrapS, GlClampToEdge)
+	GL.TexParameteri(tex.target, GlTextureWrapT, GlClampToEdge)
+	GL.TexParameteri(tex.target, GlTextureMinFilter, GlLinear)
+	GL.TexParameteri(tex.target, GlTextureMagFilter, GlLinear)
 	//}
 }
 

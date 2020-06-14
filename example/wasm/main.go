@@ -12,9 +12,10 @@ func main() {
 	var app noodle.Application
 
 	//app = &RotatingCubeApp{}
+	//app = &SpriteApp{}
+	app = &UIApp{}
 	//app = &NineSliceApp{}
-	app = &SpriteApp{}
-
+	
 	//This is blocking. Everything after this happens in the application
 	// It will return an exit code
 	exitCode := noodle.Run(app)

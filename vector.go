@@ -107,14 +107,14 @@ func (v Vector2) Negate() Vector2 {
 	return Vector2{X: -v.X, Y: -v.Y}
 }
 
-//Divide  a vector by a value (v / d)
+//Divide  a vector by a value ( v1.x / d, v1.y / d )
 func (v Vector2) Divide(d float32) Vector2 {
 	return Vector2{X: v.X / d, Y: v.Y / d}
 }
 
-//DivideV a vector by another vecotr (v / v2)
+//DivideV a vector by another vector: ( v1.x / v2.x, v1.y / v2.y )
 func (v Vector2) DivideV(v2 Vector2) Vector2 {
-	return Vector2{X: v.X / v2.Y, Y: v.Y / v2.Y}
+	return Vector2{X: v.X / v2.X, Y: v.Y / v2.Y}
 }
 
 //Normalize a vector
@@ -289,7 +289,7 @@ func (v Vector3) Divide(d float32) Vector3 {
 
 //DivideV a vector by another vecotr (v / v2)
 func (v Vector3) DivideV(v2 Vector3) Vector3 {
-	return Vector3{X: v.X / v2.Y, Y: v.Y / v2.Y, Z: v.Z / v2.Z}
+	return Vector3{X: v.X / v2.X, Y: v.Y / v2.Y, Z: v.Z / v2.Z}
 }
 
 //Normalize a vector
@@ -451,7 +451,7 @@ func (v Vector4) Divide(d float32) Vector4 {
 
 //DivideV a vector by another vecotr (v / v2)
 func (v Vector4) DivideV(v2 Vector4) Vector4 {
-	return Vector4{X: v.X / v2.Y, Y: v.Y / v2.Y, Z: v.Z / v2.Z, W: v.W / v2.W}
+	return Vector4{X: v.X / v2.X, Y: v.Y / v2.Y, Z: v.Z / v2.Z, W: v.W / v2.W}
 }
 
 //Negate or Inverts a vector
