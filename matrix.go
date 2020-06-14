@@ -1,9 +1,7 @@
 package noodle
 
-import (
-	"math"
-	"unsafe"
-)
+import "unsafe"
+import "math"
 
 //Matrix A representation of a 4 x 4 matrix
 type Matrix struct {
@@ -43,8 +41,8 @@ type Matrix struct {
 	M1 float32
 	M2 float32
 	M3 float32
-
-	M4 float32
+	
+	M4   float32
 	M5 float32
 	M6 float32
 	M7 float32
