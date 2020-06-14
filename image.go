@@ -241,15 +241,15 @@ func (tex *Texture) SetImage(image *Image) {
 	GL.TexImage2D(tex.target, tex.level, tex.format, tex.format, GlUnsignedByte, image.Data())
 
 	//Generate mips
-	if !tex.noMipMaps && image.IsPowerOf2() {
-		GL.GenerateMipmap(tex.target)
-	} else {
+	//if !tex.noMipMaps && image.IsPowerOf2() {
+	//	GL.GenerateMipmap(tex.target)
+	//} else {
 		//Turn of mips, not square
 		GL.TexParameteri(tex.target, GlTextureWrapS, GlClampToEdge)
 		GL.TexParameteri(tex.target, GlTextureWrapT, GlClampToEdge)
 		GL.TexParameteri(tex.target, GlTextureMinFilter, GlLinear)
 		GL.TexParameteri(tex.target, GlTextureMagFilter, GlLinear)
-	}
+	//}
 }
 
 //SetFilter binds the texture and sets the filtering
