@@ -1,7 +1,9 @@
 package noodle
 
-import "unsafe"
-import "math"
+import (
+	"math"
+	"unsafe"
+)
 
 //Matrix A representation of a 4 x 4 matrix
 type Matrix struct {

@@ -18,7 +18,7 @@ type RotatingCubeApp struct {
 	shader *n.Shader
 
 	uProjMatrixLoc  n.WebGLUniformLocation
-	uViewMatrixLoc  n.WebGLUniformLocation
+	uViewMatrixLoc n.WebGLUniformLocation
 	uModelMatrixLoc n.WebGLUniformLocation
 	uSamplerLoc     n.WebGLUniformLocation
 
@@ -37,6 +37,7 @@ func (app *RotatingCubeApp) prepareImage() (*n.Image, error) {
 	const width = 255
 	const height = 255
 
+	
 	//Create the image
 	upLeft := image.Point{0, 0}
 	lowRight := image.Point{width, height}
