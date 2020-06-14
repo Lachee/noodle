@@ -62,7 +62,7 @@ func (app *SpriteApp) Start() bool {
 	//n.SetCanvasSize(400, 300)
 
 	//Prepare the image
-	image, err := n.LoadImage("resources/moomin.png") // The image URL
+	image, err := n.LoadImage("resources/snufkin.gif") // The image URL
 	if err != nil {
 		log.Fatalln("Failed to spawn image", err)
 		return false
