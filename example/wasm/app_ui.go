@@ -4,6 +4,7 @@ import (
 	"log"
 	"math"
 	"math/rand"
+
 	n "github.com/lachee/noodle"
 )
 
@@ -21,7 +22,7 @@ type UIApp struct {
 type Box struct {
 	sprite *n.SliceSprite
 	rect   Rectangle
-	speed   Vector2
+	speed  Vector2
 }
 
 func (box *Box) update(dt float32) {
@@ -29,7 +30,7 @@ func (box *Box) update(dt float32) {
 
 	speedX := float64(0.0015 * box.speed.X)
 	box.rect.Width = (float32(math.Sin(n.GetFrameTime()*speedX)/2) + 1) * 3
-	
+
 	speedY := float64(0.0015 * box.speed.Y)
 	box.rect.Height = (float32(math.Cos(n.GetFrameTime()*speedY)/2) + 1) * 3
 }
@@ -40,7 +41,7 @@ func (app *UIApp) Start() bool {
 	//n.SetCanvasSize(400, 300)
 
 	//Prepare the image
-	image, err := n.LoadImage("resources/slice.png") // The image URL
+	image, err := n.LoadImage("resources/tile.png") // The image URL
 	if err != nil {
 		log.Fatalln("Failed to spawn image", err)
 		return false
@@ -48,8 +49,8 @@ func (app *UIApp) Start() bool {
 
 	//Setup the texture
 	app.texture = image.CreateTexture()
-	tileSize := float32(app.texture.Width()) / 6.0
-	app.sprite = n.NewSliceSprite(app.texture, Rectangle{tileSize * 0, 0, tileSize, float32(app.texture.Height())}, Vector2{3, 4})
+	tileSize := float32(app.texture.Width()) / 1.0
+	app.sprite = n.NewSliceSprite(app.texture, Rectangle{tileSize * 0, 0, tileSize, float32(app.texture.Height())}, Vector2{10, 10})
 	app.batch = n.NewUIRenderer()
 
 	cursor, _ := n.LoadImage("resources/cursors.svg")
@@ -68,7 +69,7 @@ func (app *UIApp) Update(dt float32) {
 			box := &Box{
 				sprite: app.sprite,
 				rect:   Rectangle{mouse.X, mouse.Y, 1, 1},
-				speed:   Vector2{rand.Float32(), rand.Float32()},
+				speed:  Vector2{rand.Float32(), rand.Float32()},
 			}
 			app.boxs = append(app.boxs, box)
 			app.boxCount++
@@ -87,7 +88,7 @@ func (app *UIApp) Update(dt float32) {
 func (app *UIApp) Render() {
 	n.GL.ClearColor(1, 1, 1, 1)
 	n.GL.Clear(n.GlColorBufferBit)
-	
+
 	app.batch.Begin()
 	for _, box := range app.boxs {
 		app.batch.SetSprite(box.sprite)
