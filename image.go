@@ -255,8 +255,8 @@ func (tex *Texture) Height() int { return tex.height }
 func (tex *Texture) Texture() *Texture { return tex }
 
 //Slice slices the texture into a UV region
-func (tex *Texture) Slice() (float64, float64, float64, float64) {
-	return 0.0, 0.0, 1.0, 1.0
+func (tex *Texture) Slice() (Vector2, Vector2) {
+	return Vector2{0.0, 0.0}, Vector2{1.0, 1.0}
 }
 
 //CreateSprite creates a sprite
