@@ -68,6 +68,14 @@ func NewSpriteRenderer() *SpriteRenderer {
 	b.indexBuffer = GL.CreateBuffer()
 	b.vertexBuffer = GL.CreateBuffer()
 
+	b.setupBuffers()
+	b.projX = float32(Width()) / 2.0
+	b.projY = float32(Height()) / 2.0
+
+	return b
+}
+
+func (b *SpriteRenderer) setupBuffers() {
 	GL.BindBuffer(GlElementArrayBuffer, b.indexBuffer)
 	GL.BufferData(GlElementArrayBuffer, b.indices, GlStaticDraw)
 
@@ -83,13 +91,6 @@ func NewSpriteRenderer() *SpriteRenderer {
 	GL.VertexAttribPointer(b.inPosition, 2, GlFloat, false, 20, 0)
 	GL.VertexAttribPointer(b.inTexCoords, 2, GlFloat, false, 20, 8)
 	GL.VertexAttribPointer(b.inColor, 4, GlUnsignedByte, true, 20, 16)
-
-	b.projX = float32(Width()) / 2.0
-	b.projY = float32(Height()) / 2.0
-
-	GL.Enable(GlBlend)
-	GL.BlendFunc(GlSrcColor, GlOneMinusSrcAlpha)
-	return b
 }
 
 //Begin starts a SpriteRenderer
@@ -99,7 +100,11 @@ func (b *SpriteRenderer) Begin() *SpriteRenderer {
 	}
 
 	b.drawing = true
+	b.setupBuffers()
 	GL.UseProgram(b.shader.GetProgram())
+
+	GL.Enable(GlBlend)
+	GL.BlendFunc(GlSrcColor, GlOneMinusSrcAlpha)
 
 	//Set the projection X and Y
 	b.projX = float32(Width()) / 2.0

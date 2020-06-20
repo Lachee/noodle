@@ -23,15 +23,16 @@ var (
 	document        js.Value
 	canvas          js.Value
 	frameRenderFunc js.Func
-	inputHandler         *InputHandler
+	inputHandler    *InputHandler
 	app             Application
 
 	width  int
 	height int
 
-	texture   *Texture
-	frameTime float64
-	deltaTime float64
+	texture    *Texture
+	frameTime  float64
+	deltaTime  float64
+	frameCount int64
 
 	awaiter chan int
 
@@ -44,6 +45,8 @@ func GetFrameTime() float64 { return frameTime }
 
 //GetDeltaTime returns a high accuracy difference in time between the last frame and the current one.
 func GetDeltaTime() float64 { return deltaTime }
+
+func GetFrameCount() int64 { return frameCount }
 
 //DT returns a less accurate version of GetDeltaTime, for all your 32bit mathmatic needs.
 func DT() float32 { return float32(deltaTime) }
@@ -164,6 +167,7 @@ func onRequestAnimationFrame(this js.Value, args []js.Value) interface{} {
 	time := args[0].Float()
 	deltaTime = time - frameTime
 	frameTime = time
+	frameCount++
 
 	//Update the input
 	inputHandler.update()

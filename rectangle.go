@@ -17,6 +17,11 @@ func NewRectangle(x, y, width, height float32) Rectangle {
 	return Rectangle{X: x, Y: y, Width: width, Height: height}
 }
 
+//NewRectangleFromMinMax creates a new rect
+func NewRectangleFromMinMax(min Vector2, max Vector2) Rectangle {
+	return Rectangle{X: min.X, Y: min.Y, Width: max.X - min.X, Height: max.Y - min.Y}
+}
+
 //NewRectangled creates a new rect using float64
 func NewRectangled(x, y, width, height float64) Rectangle {
 	return Rectangle{X: float32(x), Y: float32(y), Width: float32(width), Height: float32(height)}

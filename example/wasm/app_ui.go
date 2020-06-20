@@ -41,7 +41,7 @@ func (app *UIApp) Start() bool {
 	//n.SetCanvasSize(400, 300)
 
 	//Prepare the image
-	image, err := n.LoadImage("resources/tile.png") // The image URL
+image, err := n.LoadImage("resources/tile.png") // The image URL
 	if err != nil {
 		log.Fatalln("Failed to spawn image", err)
 		return false
