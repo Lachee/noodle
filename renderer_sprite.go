@@ -11,16 +11,15 @@ const batchMaxSize = 10000
 
 //SpriteRenderer renders UVTiles in a batched manner
 type SpriteRenderer struct {
+	Zoom   float32 //Zoom is the perspective zoom on the sprites
+	Camera Vector2 //Camera is the position of the camera
+
 	shader       *Shader
 	inPosition   int
 	inColor      int
 	inTexCoords  int
 	ufProjection WebGLUniformLocation
-	ufvDimension WebGLUniformLocation
-	ufvBorder    WebGLUniformLocation
-
-	projX float32
-	projY float32
+	ufCamera     WebGLUniformLocation
 
 	vertices     []float32
 	indices      []uint16
@@ -36,6 +35,10 @@ type SpriteRenderer struct {
 func NewSpriteRenderer() *SpriteRenderer {
 	b := &SpriteRenderer{}
 
+	//setup the zoom
+	b.Zoom = 2.0
+	b.Camera = Vector2{}
+
 	//Prepare the shader
 	var shaderError error
 	b.shader, shaderError = LoadShader(spriteRendererVertCode, spriteRendererFragCode)
@@ -48,6 +51,7 @@ func NewSpriteRenderer() *SpriteRenderer {
 	b.inColor = b.shader.GetAttribLocation("in_Color")
 	b.inTexCoords = b.shader.GetAttribLocation("in_TexCoords")
 	b.ufProjection = b.shader.GetUniformLocation("uf_Projection")
+	b.ufCamera = b.shader.GetUniformLocation("uf_Camera")
 
 	//Prepare the verticies
 	b.vertices = make([]float32, 20*batchMaxSize)
@@ -64,14 +68,9 @@ func NewSpriteRenderer() *SpriteRenderer {
 	}
 
 	//Create the buffers
-
 	b.indexBuffer = GL.CreateBuffer()
 	b.vertexBuffer = GL.CreateBuffer()
-
 	b.setupBuffers()
-	b.projX = float32(Width()) / 2.0
-	b.projY = float32(Height()) / 2.0
-
 	return b
 }
 
@@ -107,10 +106,12 @@ func (b *SpriteRenderer) Begin() *SpriteRenderer {
 	GL.BlendFunc(GlSrcColor, GlOneMinusSrcAlpha)
 
 	//Set the projection X and Y
-	b.projX = float32(Width()) / 2.0
-	b.projY = float32(Height()) / 2.0
-	GL.Uniform2f(b.ufProjection, b.projX, b.projY)
+	projX := float32(Width()) / b.Zoom
+	projY := float32(Height()) / b.Zoom
+	GL.Uniform2f(b.ufProjection, projX, projY)
 
+	//Set the camera
+	GL.Uniform2v(b.ufCamera, b.Camera)
 	return b
 }
 
@@ -141,6 +142,19 @@ func (b *SpriteRenderer) flush() {
 	//Draw the buffer
 	GL.BufferSubData(GlArrayBuffer, 0, b.vertices)
 	GL.DrawElements(GlTriangles, 6*b.index, GlUnsignedShort, 0)
+
+	//Draw the debug outlines. This involves unbinding the texture,
+	// then drawing all the triangles. If loops is enabled, then we will go in pairs.
+	if DebugDraw {
+		GL.UnbindTexture(b.lastTexture.target)
+		if DebugDrawLoops {
+			for dloop := 0; dloop < b.index; dloop++ {
+				GL.DrawElements(GlLineLoop, 6, GlUnsignedShort, 4*dloop*3)
+			}
+		} else {
+			GL.DrawElements(GlLines, 6*b.index, GlUnsignedShort, 0)
+		}
+	}
 
 	//Reset the index
 	b.index = 0
@@ -296,10 +310,11 @@ attribute vec2 in_Position;
 attribute vec4 in_Color;
 attribute vec2 in_TexCoords;
 uniform vec2 uf_Projection;
+uniform vec2 uf_Camera;
 varying vec4 var_Color;
 varying vec2 var_TexCoords;
 const vec2 center = vec2(-1.0, 1.0);
-void main() { var_Color = in_Color; var_TexCoords = in_TexCoords;	gl_Position = vec4(in_Position.x / uf_Projection.x + center.x, in_Position.y / -uf_Projection.y + center.y,  0.0, 1.0); }`
+void main() { var_Color = in_Color; var_TexCoords = in_TexCoords;	gl_Position = vec4(in_Position.x / uf_Projection.x + center.x, in_Position.y / -uf_Projection.y + center.y,  0.0, 1.0) + vec4(uf_Camera.x, uf_Camera.y, 0, 0); }`
 
 var spriteRendererFragCode = `
 precision mediump float;

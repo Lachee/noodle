@@ -193,6 +193,19 @@ func (b *UIRenderer) flush() {
 	GL.BufferSubData(GlArrayBuffer, 0, b.vertices)
 	GL.DrawElements(GlTriangles, 6*b.index, GlUnsignedShort, 0)
 
+	//Draw the debug outlines. This involves unbinding the texture,
+	// then drawing all the triangles. If loops is enabled, then we will go in pairs.
+	if DebugDraw {
+		GL.UnbindTexture(b.texture.target)
+		if DebugDrawLoops {
+			for dloop := 0; dloop < b.index; dloop++ {
+				GL.DrawElements(GlLineLoop, 6, GlUnsignedShort, 4*dloop*3)
+			}
+		} else {
+			GL.DrawElements(GlLines, 6*b.index, GlUnsignedShort, 0)
+		}
+	}
+
 	//Reset the index
 	b.index = 0
 }
