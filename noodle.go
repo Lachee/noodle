@@ -36,6 +36,11 @@ var (
 
 	awaiter chan int
 
+	//DebugDraw causes renderers to display debug information
+	DebugDraw = true
+	//DebugDrawLoops is a less efficent way of drawing, but preserves the box representation when drawing
+	DebugDrawLoops = true
+
 	//AlwaysDraw continously draws
 	AlwaysDraw = true
 )
@@ -46,6 +51,7 @@ func GetFrameTime() float64 { return frameTime }
 //GetDeltaTime returns a high accuracy difference in time between the last frame and the current one.
 func GetDeltaTime() float64 { return deltaTime }
 
+//GetFrameCount returns the current frame
 func GetFrameCount() int64 { return frameCount }
 
 //DT returns a less accurate version of GetDeltaTime, for all your 32bit mathmatic needs.
@@ -100,8 +106,8 @@ func Run(application Application) int {
 		return 0
 	}
 
-	//Record canvas events
-	onMouseChangeEvent := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	//Cursor Moved
+	onMouseChangeEvent := AddEventListener("mousemove", func(this js.Value, args []js.Value) interface{} {
 		evt := args[0]
 		x := evt.Get("offsetX").Int()
 		y := evt.Get("offsetY").Int()
@@ -110,29 +116,58 @@ func Run(application Application) int {
 		return nil
 	})
 	defer onMouseChangeEvent.Release()
-	canvas.Call("addEventListener", "mousemove", onMouseChangeEvent, false)
 
-	//Record canvas events
-	onMouseUpEvent := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	//Mouse Up
+	onMouseUpEvent := AddEventListener("mouseup", func(this js.Value, args []js.Value) interface{} {
 		evt := args[0]
 		button := evt.Get("button").Int()
 		inputHandler.setMouseUp(button)
 
 		return nil
 	})
-	defer onMouseChangeEvent.Release()
-	canvas.Call("addEventListener", "mouseup", onMouseUpEvent)
+	defer onMouseUpEvent.Release()
 
-	//Record canvas events
-	onMouseDownEvent := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	//Mouse Down
+	onMouseDownEvent := AddEventListener("mousedown", func(this js.Value, args []js.Value) interface{} {
 		evt := args[0]
 		button := evt.Get("button").Int()
 		inputHandler.setMouseDown(button)
-
 		return nil
 	})
-	defer onMouseChangeEvent.Release()
-	canvas.Call("addEventListener", "mousedown", onMouseDownEvent)
+	defer onMouseDownEvent.Release()
+
+	//Mouse Scroll
+	onMouseScrollEvent := AddEventListener("wheel", func(this js.Value, args []js.Value) interface{} {
+		evt := args[0]
+		scroll := evt.Get("deltaY").Float()
+		inputHandler.setMouseScroll(float32(scroll))
+		return nil
+	})
+	defer onMouseScrollEvent.Release()
+
+	//Key Down
+	onKeyDownEvent := AddEventListener("keydown", func(this js.Value, args []js.Value) interface{} {
+		//Get the event and ditch repeated keys
+		evt := args[0]
+		if evt.Get("repeat").Bool() {
+			return nil
+		}
+
+		//Set the key code
+		key := evt.Get("keyCode").Int()
+		inputHandler.setKeyDown(key)
+		return nil
+	})
+	defer onKeyDownEvent.Release()
+
+	//Key Up
+	onKeyUpEvent := AddEventListener("keyup", func(this js.Value, args []js.Value) interface{} {
+		evt := args[0]
+		key := evt.Get("keyCode").Int()
+		inputHandler.setKeyUp(key)
+		return nil
+	})
+	defer onKeyUpEvent.Release()
 
 	//Begin rendering
 	GL.Viewport(0, 0, width, height)
@@ -140,6 +175,13 @@ func Run(application Application) int {
 	defer frameRenderFunc.Release()
 	js.Global().Call("requestAnimationFrame", frameRenderFunc)
 	return <-awaiter
+}
+
+//AddEventListener adds a new event listener to the canvas. It will return a JS function that needs to be Released() when its no longer required.
+func AddEventListener(event string, fn func(this js.Value, args []js.Value) interface{}) js.Func {
+	jsfunc := js.FuncOf(fn)
+	document.Call("addEventListener", event, jsfunc)
+	return jsfunc
 }
 
 //SetCanvasSize the size of the canvas
