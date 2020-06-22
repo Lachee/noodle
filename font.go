@@ -141,8 +141,6 @@ func LoadFontBitmap(image *Image, charset string, charPerLines, noLines int) *Fo
 	imageHeight := float32(image.Height())
 	gwidth := imageWidth / float32(charPerLines)
 	gheight := imageHeight / float32(noLines)
-	//uwidth := gwidth / imageWidth
-	//vheight := gheight / imageHeight
 
 	//Why is this inconsistent. Its even a different type. Its like saying this array is a byte array, until you walk it, then its a rune array
 	//for i, c := range charset {
