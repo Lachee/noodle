@@ -2,7 +2,6 @@ package noodle
 
 import (
 	"image"
-	"log"
 	"math"
 
 	"golang.org/x/image/font"
@@ -124,7 +123,11 @@ func LoadFont(face font.Face, charset string) *Font {
 	return f
 }
 
-//LoadFontBitmap loads a bitmap font, with the given charset map and given characters per line. The image will be directly used as the font.
+/*
+LoadFontBitmap loads a bitmap font, with the given charset map and given characters per line. The image will be directly used as the font.
+NOTE: Due to Go's inconsistencies and frankly absurb design choice in how it represent strings, this needs to be ASCII Extended only charset. You can map different icons, but this needs to be a []byte basically, because Go is dumb.
+  Serious, it has some really shit font implementation, and to top it off, it gives me shit like "iterating gives different results than indexing". Its beyond reason
+*/
 func LoadFontBitmap(image *Image, charset string, charPerLines, noLines int) *Font {
 	f := &Font{
 		charset: charset,
@@ -141,12 +144,14 @@ func LoadFontBitmap(image *Image, charset string, charPerLines, noLines int) *Fo
 	//uwidth := gwidth / imageWidth
 	//vheight := gheight / imageHeight
 
-	//Why is this inconsistent
-	for i, char := range charset {
-		runeI := rune(charset[i])
-		runeChar := char
-		log.Println(i, runeI, string(runeI), runeChar, string(runeChar))
-	}
+	//Why is this inconsistent. Its even a different type. Its like saying this array is a byte array, until you walk it, then its a rune array
+	//for i, c := range charset {
+	//	if rune(charset[i]) == c {
+	//		log.Println(i, c, " <- MATCH")
+	//	} else {
+	//		log.Println(i, c, " <- DIFFERENT?")
+	//	}
+	//}
 
 	x := float32(0)
 	y := float32(0)
@@ -159,8 +164,6 @@ func LoadFontBitmap(image *Image, charset string, charPerLines, noLines int) *Fo
 			Ascent:  0,
 			Descent: 0,
 		}
-
-		//log.Println(i, string(charset[i]), string(charset[i]), c, x, y)
 
 		//increment and reset if requried
 		x++
