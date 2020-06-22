@@ -37,7 +37,7 @@ var (
 	awaiter chan int
 
 	//DebugDraw causes renderers to display debug information
-	DebugDraw = true
+	DebugDraw = false
 	//DebugDrawLoops is a less efficent way of drawing, but preserves the box representation when drawing
 	DebugDrawLoops = true
 

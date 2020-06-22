@@ -151,23 +151,24 @@ func (i *InputHandler) setMousePosition(x, y int) {
 // setMouseScroll sets the mouse delta scroll
 func (i *InputHandler) setMouseScroll(delta float32) {
 	i.mouseScrollDeltaPrevious = delta
-	log.Println("scroll", delta)
 }
 
 //Sets the mouse Down State
 func (i *InputHandler) setMouseDown(button int) {
-	//println("Mouse Down", button)
 	i.buttonStates[button] = keyStatePrePressed
 }
 
 //Sets the mouse up state
 func (i *InputHandler) setMouseUp(button int) {
-	//println("Mouse Up", button)
 	i.buttonStates[button] = keyStatePreRelease
 }
 
 func (i *InputHandler) setKeyDown(key int) {
 	i.keyStates[Key(key)] = keyStatePrePressed
+	log.Println("Mouse Down", key)
+	if DebugDraw {
+		log.Println("Mouse Down", key)
+	}
 }
 func (i *InputHandler) setKeyUp(key int) {
 	i.keyStates[Key(key)] = keyStatePreRelease

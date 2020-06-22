@@ -8,9 +8,13 @@ import (
 	n "github.com/lachee/noodle"
 )
 
+const BitmapCharset = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\x7F\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8a\x8b\x8c\x8d\x8e\x8f\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9d\x9e\x9f\xa0\xa1\xa2\xa3\xa4\xa5\xa6\xa7\xa8\xa9\xaa\xab\xac\xad\xae\xaf\xb0\xb1\xb2\xb3\xb4\xb5\xb6\xb7\xb8\xb9\xba\xbb\xbc\xbd\xbe\xbf\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee\xef\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff"
+
 //FontApp handles the game. Put your variables in here
 type FontApp struct {
 	font           *n.Font
+	fontTTF        *n.Font
+	fontBitmap     *n.Font
 	cursor         *n.Sprite
 	boxSprite      *n.SliceSprite
 	spriteRenderer *n.SpriteRenderer
@@ -21,6 +25,7 @@ type FontApp struct {
 //Start allows for setup
 func (app *FontApp) Start() bool {
 
+	//Load the TTF font
 	fontData, err := n.DownloadFile("/resources/fonts/BalsamiqSans-Regular.ttf")
 	//fontData, err := n.DownloadFile("/resources/fonts/ShareTechMono-Regular.ttf")
 	//fontData, err := n.DownloadFile("/resources/fonts/LobsterTwo-Regular.ttf")
@@ -30,19 +35,26 @@ func (app *FontApp) Start() bool {
 		log.Fatalln("Failed to download font", err)
 		return false
 	}
-
 	fontSrc, err := truetype.Parse(fontData)
 	if err != nil {
 		log.Fatalln("Failed to parse the font", err)
 		return false
 	}
-
 	options := &truetype.Options{Size: 100}
 	fontFace := truetype.NewFace(fontSrc, options)
-	app.font = n.LoadFont(fontFace, n.CharacterSetASCII)
+	app.fontTTF = n.LoadFont(fontFace, n.CharacterSetASCII)
 
+	//Load the Bitmap Font
+	fontImage, err := n.LoadImage("/resources/fonts/engi.png")
+	if err != nil {
+		log.Fatalln("Failed to load bitmap font", err)
+		return false
+	}
+	app.fontBitmap = n.LoadFontBitmap(fontImage, BitmapCharset, 48, 6)
+	app.font = app.fontBitmap
+
+	//Load the renderers
 	app.uiRenderer = n.NewUIRenderer()
-
 	app.spriteRenderer = n.NewSpriteRenderer()
 	cursor, _ := n.LoadImage("resources/cursors.svg")
 	cursorTexture := cursor.CreateTexture()
@@ -71,6 +83,18 @@ func (app *FontApp) Update(dt float32) {
 		n.DebugDraw = !n.DebugDraw
 	}
 
+	if n.Input().GetKeyDown(n.KeyOne) {
+		app.font = app.fontTTF
+	}
+	if n.Input().GetKeyDown(n.KeyTwo) {
+		app.font = app.fontBitmap
+	}
+
+	//Set a default font
+	if app.font == nil {
+		app.font = app.fontTTF
+	}
+
 	//Camera Control
 	axis := n.Input().GetAxis2D(n.KeyArrowLeft, n.KeyArrowRight, n.KeyArrowDown, n.KeyArrowUp).Scale(1 / dt)
 	app.spriteRenderer.Camera = app.spriteRenderer.Camera.Add(axis.Scale(-0.05 * app.spriteRenderer.Zoom))
@@ -82,7 +106,6 @@ func (app *FontApp) Update(dt float32) {
 	if scroll < 0 {
 		app.spriteRenderer.Zoom -= 0.01 * dt
 	}
-	//log.Println("scroll", scroll)
 
 	if n.Input().GetButtonDown(1) {
 		app.spriteRenderer.Zoom = 7.5
@@ -97,6 +120,11 @@ func (app *FontApp) Update(dt float32) {
 
 //Render draws the frame
 func (app *FontApp) Render() {
+
+	//Set a default font
+	if app.font == nil {
+		app.font = app.fontTTF
+	}
 
 	n.GL.ClearColor(1, 1, 1, 1)
 	n.GL.Clear(n.GlColorBufferBit)
@@ -121,7 +149,7 @@ func (app *FontApp) renderFont() {
 	app.spriteRenderer.Draw(sprite, Vector2{0, 0}, glyphTransform, n.Black)
 
 	//Draw the text
-	app.font.GlyphString("This is an example string!").RenderSprites(app.spriteRenderer, Vector2{0, float32(app.font.GetTexture().Height())}, 20.0/30.0, n.GopherBlue)
+	app.font.GlyphString("\x02 0123465789 This is an example string! \x7F \xB0\xB1\xB2").RenderSprites(app.spriteRenderer, Vector2{0, float32(app.font.GetTexture().Height()) + 20}, 20.0/30.0, n.GopherBlue)
 
 	app.spriteRenderer.End()
 }
