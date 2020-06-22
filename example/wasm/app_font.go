@@ -27,9 +27,11 @@ type FontApp struct {
 //Start allows for setup
 func (app *FontApp) Start() bool {
 
-	fontData, err := n.DownloadFile("/resources/fonts/BalsamiqSans-Regular.ttf")
+	//fontData, err := n.DownloadFile("/resources/fonts/BalsamiqSans-Regular.ttf")
 	//fontData, err := n.DownloadFile("/resources/fonts/ShareTechMono-Regular.ttf")
 	//fontData, err := n.DownloadFile("/resources/fonts/LobsterTwo-Regular.ttf")
+	//fontData, err := n.DownloadFile("/resources/fonts/Notable-Regular.ttf")
+	fontData, err := n.DownloadFile("/resources/fonts/luxirr.ttf")
 	if err != nil {
 		log.Fatalln("Failed to download font", err)
 		return false
@@ -42,7 +44,7 @@ func (app *FontApp) Start() bool {
 	}
 
 	options := &truetype.Options{
-		Size: 30,
+		Size: 20,
 	}
 	fontFace := truetype.NewFace(fontSrc, options)
 
@@ -104,12 +106,31 @@ func (app *FontApp) Start() bool {
 	return true
 }
 
+var index = 0
+
 //Update runs once a frame
 func (app *FontApp) Update(dt float32) {
 
+	if n.Input().GetKeyDown(n.KeySpace) {
+		n.DebugDraw = !n.DebugDraw
+	}
+
+	//Camera Control
+	axis := n.Input().GetAxis2D(n.KeyArrowLeft, n.KeyArrowRight, n.KeyArrowDown, n.KeyArrowUp)
+	app.spriteRenderer.Camera = app.spriteRenderer.Camera.Add(axis.Scale(0.05 * app.spriteRenderer.Zoom))
+
+	//scroll := n.Input().GetMouseScroll()
+	//log.Println("scroll", scroll)
+
+	if n.Input().GetButtonDown(1) {
+		app.spriteRenderer.Zoom = 7.5
+		app.spriteRenderer.Camera.X = -1.9
+	}
+
+	//index = int(math.Abs(math.Mod(float64(index-1), float64(len(app.font.Set)))))
 	runeIndexerSpeed := float64(0.1)
-	runeIndex := int(math.Mod(float64((n.GetFrameCount()+100))*runeIndexerSpeed, float64(len(app.font.Set))))
-	app.previewRune = rune(app.font.Set[runeIndex])
+	index = int(math.Mod(float64((n.GetFrameCount()+100))*runeIndexerSpeed, float64(len(app.font.Set))))
+	app.previewRune = rune(app.font.Set[index])
 }
 
 //Render draws the frame
@@ -201,15 +222,10 @@ type BitFont struct {
 
 //BitGlyph is the metadata for a rune
 type BitGlyph struct {
-	//AtlasBounding is the position within the atlas the Glyph is in
-	AtlasBounding Rectangle
-
-	//Width is the width of the character when drawing (this helps determine spacing)
-	Width float32
-	//Ascent is how far up from the base line it must travel
-	Ascent float32
-	//Descent is how far down from the base line it must travel
-	Descent float32
+	AtlasBounding Rectangle //AtlasBounding is the position within the atlas the Glyph is in
+	BoundMin      Vector2   //BoundMin is the minimum bounding box
+	BoundMax      Vector2   //BoundMax is the maximum bounding box
+	Advance       float32   //Advance is how far to move after this glpyh
 }
 
 //LoadBitFont loads a font
@@ -251,22 +267,7 @@ func LoadBitFont(fontFace font.Face, charset string) *BitFont {
 		Dot:  fixed.P(0, ascent),
 	}
 
-	//Draw each line
-	/*
-		for i := 0; i < lines; i++ {
-			from := i * CPL
-			to := (i + 1) * CPL
-
-			drawer.Dot = fixed.P(0, metrics.Ascent.Round()+(metrics.Height.Ceil()*i))
-			if i == lines-1 {
-				log.Println("FLB: ", charset[from:])
-				drawer.DrawString(charset[from:])
-			} else {
-				log.Println("FLA: ", charset[from:to])
-				drawer.DrawString(charset[from:to])
-			}
-		}
-	*/
+	//Draw eeach character
 	for _, r := range charset {
 		drawer.Dot = drawer.Dot.Add(fixed.P(padding, 0))
 		point, nextPos := drawer.BoundString(string(r))
@@ -278,7 +279,7 @@ func LoadBitFont(fontFace font.Face, charset string) *BitFont {
 		if drawer.Dot.X.Ceil()+nextPos.Ceil() > width {
 			drawer.Dot = fixed.P(0, drawer.Dot.Y.Ceil()+metrics.Height.Ceil()+padding)
 			rect.X = 0
-			rect.Y += float32(metrics.Height.Ceil())
+			rect.Y += float32(metrics.Height.Ceil() + padding)
 		}
 
 		/*
@@ -291,11 +292,13 @@ func LoadBitFont(fontFace font.Face, charset string) *BitFont {
 		*/
 		bnd, adv, ok := fontFace.GlyphBounds(rune(r))
 		if ok {
+			bmin := Vector2{float32(bnd.Min.X.Round()), float32(bnd.Min.Y.Round())}
+			bmax := Vector2{float32(bnd.Max.X.Round()), float32(bnd.Max.Y.Round())}
 			bf.Glyphs[r] = BitGlyph{
 				AtlasBounding: rect,
-				Width:         float32(adv.Round()),
-				Ascent:        float32(bnd.Min.Y.Round()),
-				Descent:       float32(bnd.Max.Y.Round()),
+				BoundMin:      bmin,
+				BoundMax:      bmax,
+				Advance:       float32(adv.Round()),
 			}
 			drawer.DrawString(string(r))
 		}
@@ -330,6 +333,8 @@ func LoadBitFont(fontFace font.Face, charset string) *BitFont {
 //RenderSprite renders the font as a sprite using the current SpriteRenderer
 func (f *BitFont) RenderSprite(renderer *n.SpriteRenderer, message string, position Vector2) {
 
+	doKerning := true
+
 	for i, c := range message {
 
 		//Prepare the bounds and the sprite for the bounds
@@ -337,23 +342,25 @@ func (f *BitFont) RenderSprite(renderer *n.SpriteRenderer, message string, posit
 		glyph := f.Glyphs[r]
 		sprite := n.NewSprite(f.Texture, glyph.AtlasBounding)
 
-		//Update the position to account for the previous kerning, moving us backwards if required.
-		if i > 0 {
-			pr := rune(message[i-1])
-			kern := f.FontFace.Kern(pr, r)
-			//log.Println(string(pr), string(r), kern, kern.Round())
-			position.X += float32(kern.Round())
-		}
-
 		//Get the sprite back to the baseline
 		baseline := -glyph.AtlasBounding.Height
-		offset := baseline + glyph.Descent
+		offsetY := baseline + glyph.BoundMax.Y
+		offsetX := float32(0)
+
+		//Update the position to account for the previous kerning, moving us backwards if required.
+		if doKerning && i > 0 {
+			pr := rune(message[i-1])
+			kern := f.FontFace.Kern(pr, r)
+			offsetX = float32(kern.Round())
+		}
 
 		//Draw the glyph
-		glyphTransform := n.NewTransform2D(position.Add(Vector2{0, offset}), 0, Vector2{1, 1})
+		glyphTransform := n.NewTransform2D(position.Add(Vector2{offsetX, offsetY}), 0, Vector2{1, 1})
 		renderer.Draw(sprite, Vector2{0, 0}, glyphTransform, 0x0, 1)
 
 		//Update the position progress
-		position.X += glyph.Width
+		position.X += glyph.Advance + offsetX
+		//position.X += glyph.BoundMax.X - glyph.BoundMin.X
+		//position.Y += 5
 	}
 }
