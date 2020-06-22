@@ -161,7 +161,7 @@ func (b *SpriteRenderer) flush() {
 }
 
 //Draw a particular texture
-func (b *SpriteRenderer) Draw(r UVTile, origin Vector2, transform Transform2D, color uint32, transparency64 float64) {
+func (b *SpriteRenderer) Draw(r UVTile, origin Vector2, transform Transform2D, color Color) {
 	if !b.drawing {
 		log.Fatal("Batch.Begin() must be called first")
 	}
@@ -180,7 +180,6 @@ func (b *SpriteRenderer) Draw(r UVTile, origin Vector2, transform Transform2D, c
 	scaleX := transform.Scale.X
 	scaleY := transform.Scale.Y
 	rotation := transform.Rotation
-	transparency := float32(transparency64)
 
 	x -= originX * float32(r.Width())
 	y -= originY * float32(r.Height())
@@ -260,11 +259,14 @@ func (b *SpriteRenderer) Draw(r UVTile, origin Vector2, transform Transform2D, c
 	x4 += worldOriginX
 	y4 += worldOriginY
 
-	red := (color >> 16) & 0xFF
-	green := ((color >> 8) & 0xFF) << 8
-	blue := (color & 0xFF) << 16
-	alpha := uint32(transparency*255.0) << 24
-	tint := math.Float32frombits((alpha | blue | green | red) & 0xfeffffff)
+	/*
+		red := (color >> 16) & 0xFF
+		green := ((color >> 8) & 0xFF) << 8
+		blue := (color & 0xFF) << 16
+		alpha := uint32(transparency*255.0) << 24
+		tint := math.Float32frombits((alpha | blue | green | red) & 0xfeffffff)
+	*/
+	tint := color.ToTint()
 
 	idx := b.index * 20
 

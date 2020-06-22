@@ -117,12 +117,12 @@ func (app *SpriteApp) Render() {
 	app.batch.Begin()
 
 	for _, ball := range app.balls {
-		app.batch.Draw(ball.sprite, ball.origin, ball.transform, 0xffffff, 1)
+		app.batch.Draw(ball.sprite, ball.origin, ball.transform, n.White)
 	}
 
 	mouse := n.Input().GetMousePosition()
 	t := n.NewTransform2D(mouse, 0, Vector2{1, 1})
-	app.batch.Draw(app.cursor, Vector2{0.5, 0.5}, t, 0xffffff, 1)
+	app.batch.Draw(app.cursor, Vector2{0.5, 0.5}, t, n.White)
 
 	//app.batch.Draw(app.sprite, Vector2{0, 0}, Vector2{0, 0}, Vector2{1, 1}, 0, 0xffffff, 1)
 	app.batch.End()

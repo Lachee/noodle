@@ -27,11 +27,11 @@ type FontApp struct {
 //Start allows for setup
 func (app *FontApp) Start() bool {
 
-	//fontData, err := n.DownloadFile("/resources/fonts/BalsamiqSans-Regular.ttf")
+	fontData, err := n.DownloadFile("/resources/fonts/BalsamiqSans-Regular.ttf")
 	//fontData, err := n.DownloadFile("/resources/fonts/ShareTechMono-Regular.ttf")
 	//fontData, err := n.DownloadFile("/resources/fonts/LobsterTwo-Regular.ttf")
 	//fontData, err := n.DownloadFile("/resources/fonts/Notable-Regular.ttf")
-	fontData, err := n.DownloadFile("/resources/fonts/luxirr.ttf")
+	//fontData, err := n.DownloadFile("/resources/fonts/luxirr.ttf")
 	if err != nil {
 		log.Fatalln("Failed to download font", err)
 		return false
@@ -44,7 +44,7 @@ func (app *FontApp) Start() bool {
 	}
 
 	options := &truetype.Options{
-		Size: 20,
+		Size: 100,
 	}
 	fontFace := truetype.NewFace(fontSrc, options)
 
@@ -55,7 +55,7 @@ func (app *FontApp) Start() bool {
 	log.Println("Kern between", string(kernA), string(kernB), ". Face:", faceKern, ", Font:", fontKern)
 
 	app.font = LoadBitFont(fontFace, CharacterSetASCII)
-
+	//app.font.Spacing = -10
 	/*
 		// nGlyphs is the number of glyphs to generate: 95 characters in the range
 		// [0x20, 0x7e], plus the replacement character.
@@ -116,10 +116,16 @@ func (app *FontApp) Update(dt float32) {
 	}
 
 	//Camera Control
-	axis := n.Input().GetAxis2D(n.KeyArrowLeft, n.KeyArrowRight, n.KeyArrowDown, n.KeyArrowUp)
-	app.spriteRenderer.Camera = app.spriteRenderer.Camera.Add(axis.Scale(0.05 * app.spriteRenderer.Zoom))
+	axis := n.Input().GetAxis2D(n.KeyArrowLeft, n.KeyArrowRight, n.KeyArrowDown, n.KeyArrowUp).Scale(1 / dt)
+	app.spriteRenderer.Camera = app.spriteRenderer.Camera.Add(axis.Scale(-0.05 * app.spriteRenderer.Zoom))
 
-	//scroll := n.Input().GetMouseScroll()
+	scroll := n.Input().GetMouseScroll()
+	if scroll > 0 {
+		app.spriteRenderer.Zoom += 0.01 * dt
+	}
+	if scroll < 0 {
+		app.spriteRenderer.Zoom -= 0.01 * dt
+	}
 	//log.Println("scroll", scroll)
 
 	if n.Input().GetButtonDown(1) {
@@ -149,18 +155,18 @@ func (app *FontApp) renderFont() {
 	//Draw the atlas
 	//atlasTransform := n.NewTransform2D(Vector2{0, 0}, 0, Vector2{1, 1})
 
-	//Draw the mouse
-	//mouse := n.Input().GetMousePosition()
-	glyphTransform := n.NewTransform2D(Vector2{350, 150}, 0, Vector2{1, 1})
+	//Draw the atlas
 	fontTransform := n.NewTransform2D(n.NewVector2Zero(), 0, Vector2{1, 1})
-	//app.batch.Draw(app.cursor, Vector2{0.5, 0.5}, mouseTransform, 0xffffff, 1)
+	app.spriteRenderer.Draw(app.font.Texture, Vector2{0, 0}, fontTransform, n.Black)
 
-	app.spriteRenderer.Draw(app.font.Texture, Vector2{0, 0}, fontTransform, 0x0, 1)
-
+	//Draw the glyph demo
+	glyphTransform := n.NewTransform2D(Vector2{0, 0}, 0, Vector2{1, 1})
 	sprite := n.NewSprite(app.font.Texture, app.font.Glyphs[app.previewRune].AtlasBounding)
-	app.spriteRenderer.Draw(sprite, Vector2{0, 0}, glyphTransform, 0x0, 1)
+	app.spriteRenderer.Draw(sprite, Vector2{0, 0}, glyphTransform, n.Black)
 
-	app.font.RenderSprite(app.spriteRenderer, "AV should be kerned.", Vector2{400, 150})
+	//Draw the text
+	app.font.RenderSprites(app.spriteRenderer, "AV should be kerned.", Vector2{0, float32(app.font.Texture.Height())}, 30.0/20.0, n.Red)
+
 	app.spriteRenderer.End()
 }
 
@@ -218,6 +224,9 @@ type BitFont struct {
 
 	//Texture is the loaded texture that is in GPU memory
 	Texture *n.Texture
+
+	//Font Spacing
+	Spacing float32
 }
 
 //BitGlyph is the metadata for a rune
@@ -226,6 +235,14 @@ type BitGlyph struct {
 	BoundMin      Vector2   //BoundMin is the minimum bounding box
 	BoundMax      Vector2   //BoundMax is the maximum bounding box
 	Advance       float32   //Advance is how far to move after this glpyh
+}
+
+//BitGlyphString is a representation of a glyph string, used for rendering
+type BitGlyphString struct {
+	Font       *BitFont    //Font is the font this string is using
+	Positions  []Vector2   //Position is relative position of the sprite
+	UV         []Rectangle //The UV of the sprite
+	LineHeight float32     //LineHeight is the heighest character in the string. Use this for calculating multi-height strings.
 }
 
 //LoadBitFont loads a font
@@ -330,21 +347,38 @@ func LoadBitFont(fontFace font.Face, charset string) *BitFont {
 	return bf
 }
 
-//RenderSprite renders the font as a sprite using the current SpriteRenderer
-func (f *BitFont) RenderSprite(renderer *n.SpriteRenderer, message string, position Vector2) {
+//RenderSprites renders the message using the font as a series of sprites
+func (f *BitFont) RenderSprites(renderer *n.SpriteRenderer, message string, position Vector2, scale float32, color n.Color) {
+	bgs := f.GlyphString(message)
+	bgs.RenderSprites(renderer, position, scale, color)
+}
 
+//GlyphString creates a list of every glyph required for a string, storing its UV in the atlas and its 2D position.
+// This is used in rendering for drawing each character. A quad can be made at each position, with the UV supplied.
+// All the origins of the sprites are assumed to be at 0,1 (bottom left). When drawing, draw from the bottom left corner. This will ensure the scaling is applied correctly.
+// This function takes into account for their Kerning, but some TTF fonts may not support Kerning (Go Bug)
+func (f *BitFont) GlyphString(message string) *BitGlyphString {
+
+	//Prepare the BGS
+	bgs := &BitGlyphString{}
+	bgs.UV = make([]Rectangle, len(message))
+	bgs.Positions = make([]Vector2, len(message))
+	bgs.Font = f
+	position := Vector2{0, 0}
+
+	//Iterate over every character
 	doKerning := true
-
 	for i, c := range message {
 
 		//Prepare the bounds and the sprite for the bounds
 		r := rune(c)
 		glyph := f.Glyphs[r]
-		sprite := n.NewSprite(f.Texture, glyph.AtlasBounding)
+		bgs.UV[i] = glyph.AtlasBounding
 
 		//Get the sprite back to the baseline
-		baseline := -glyph.AtlasBounding.Height
-		offsetY := baseline + glyph.BoundMax.Y
+		//baseline := -glyph.AtlasBounding.Height
+		//offsetY := baseline + glyph.BoundMax.Y
+		offsetY := glyph.BoundMax.Y
 		offsetX := float32(0)
 
 		//Update the position to account for the previous kerning, moving us backwards if required.
@@ -354,13 +388,28 @@ func (f *BitFont) RenderSprite(renderer *n.SpriteRenderer, message string, posit
 			offsetX = float32(kern.Round())
 		}
 
-		//Draw the glyph
-		glyphTransform := n.NewTransform2D(position.Add(Vector2{offsetX, offsetY}), 0, Vector2{1, 1})
-		renderer.Draw(sprite, Vector2{0, 0}, glyphTransform, 0x0, 1)
+		//Store its position
+		bgs.Positions[i] = position.Add(Vector2{offsetX, offsetY})
+
+		//Store the heighest character
+		if glyph.AtlasBounding.Height > bgs.LineHeight {
+			bgs.LineHeight = glyph.AtlasBounding.Height
+		}
 
 		//Update the position progress
-		position.X += glyph.Advance + offsetX
+		position.X += glyph.Advance + offsetX + f.Spacing
 		//position.X += glyph.BoundMax.X - glyph.BoundMin.X
 		//position.Y += 5
+	}
+
+	return bgs
+}
+
+//RenderSprites renders the font using the sprite renderer
+func (s *BitGlyphString) RenderSprites(renderer *n.SpriteRenderer, position Vector2, scale float32, color n.Color) {
+	for i := range s.Positions {
+		glyphTransform := n.NewTransform2D(position.Add(s.Positions[i]), 0, Vector2{1, 1})
+		sprite := &n.Sprite{s.Font.Texture, s.UV[i]}
+		renderer.Draw(sprite, Vector2{0, 1}, glyphTransform, color)
 	}
 }
