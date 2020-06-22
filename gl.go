@@ -8,14 +8,19 @@ import (
 
 //WebGLBuffer the js representation of a buffer
 type WebGLBuffer = js.Value
+
 //WebGLShader is a JS representation of a shader
 type WebGLShader = js.Value
+
 //WebGLShaderProgram is a JS representation of a shader program
 type WebGLShaderProgram = js.Value
+
 //WebGLUniformLocation is a JS representation of a uniform location
 type WebGLUniformLocation = js.Value
-//WebGLAttributeLocation is a representation of a attribute location 
+
+//WebGLAttributeLocation is a representation of a attribute location
 type WebGLAttributeLocation = int
+
 //WebGLTexture is a JS representation of a texture
 type WebGLTexture = js.Value
 
@@ -234,6 +239,11 @@ func (gl *WebGL) CreateTexture() WebGLTexture {
 //BindTexture binds a given WebGLTexture to a target (binding point).
 func (gl *WebGL) BindTexture(target GLEnum, texture WebGLTexture) {
 	gl.context.Call("bindTexture", target, texture)
+}
+
+//UnbindTexture unbinds the target texture. Alias of bindTexture(target, nil) as WebGLTexture cannot be nil
+func (gl *WebGL) UnbindTexture(target GLEnum) {
+	gl.context.Call("bindTexture", target, nil)
 }
 
 //ActiveTexture tells WebGL what texture state will be now modified

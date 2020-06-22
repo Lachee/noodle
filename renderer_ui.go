@@ -10,7 +10,9 @@ const uiRendererVertexLength = 44
 
 //UIRenderer renders UVTiles in a batched manner
 type UIRenderer struct {
-	Zoom float32
+	Zoom       float32
+	scale      float32
+	scaleInput bool
 
 	shader *Shader
 
@@ -41,6 +43,8 @@ func NewUIRenderer() *UIRenderer {
 	b := &UIRenderer{}
 
 	b.Zoom = 2.0
+	b.scale = 50.0
+	b.scaleInput = false
 
 	//Prepare the shader
 	var shaderError error
@@ -80,6 +84,11 @@ func NewUIRenderer() *UIRenderer {
 	b.indexBuffer = GL.CreateBuffer()
 	b.vertexBuffer = GL.CreateBuffer()
 
+	b.setupBuffers()
+	return b
+}
+
+func (b *UIRenderer) setupBuffers() {
 	GL.BindBuffer(GlElementArrayBuffer, b.indexBuffer)
 	GL.BufferData(GlElementArrayBuffer, b.indices, GlStaticDraw)
 
@@ -100,12 +109,30 @@ func NewUIRenderer() *UIRenderer {
 	GL.VertexAttribPointer(b.inSliceCoords, 2, GlFloat, false, uiRendererVertexLength, 24)
 	GL.VertexAttribPointer(b.inDimension, 2, GlFloat, false, uiRendererVertexLength, 32)
 	GL.VertexAttribPointer(b.inColor, 4, GlUnsignedByte, true, uiRendererVertexLength, 40)
-	return b
 }
 
 //Screen2UISpace converts the screen cooridinates to UI coords
 func (b *UIRenderer) Screen2UISpace(screen Vector2) Vector2 {
-	return screen.Scale(b.Zoom)
+	point := screen.Scale(b.Zoom)
+	if b.scaleInput {
+		point = point.Scale(1.0 / b.scale)
+	}
+	return point
+}
+
+//GetScale gets the current scale
+func (b *UIRenderer) GetScale() float32 {
+	return b.scale
+}
+
+//SetScale sets how zoomed in the rectangles appear
+func (b *UIRenderer) SetScale(scale float32) {
+	b.scale = scale
+}
+
+//ScaleInput will scale all the rectangles, so that they are pixel perfect
+func (b *UIRenderer) ScaleInput(state bool) {
+	b.scaleInput = state
 }
 
 //Begin starts a UIRenderer
@@ -115,7 +142,11 @@ func (b *UIRenderer) Begin() *UIRenderer {
 	}
 
 	b.drawing = true
+	b.setupBuffers()
 	GL.UseProgram(b.shader.GetProgram())
+
+	GL.Enable(GlBlend)
+	GL.BlendFunc(GlSrcColor, GlOneMinusSrcAlpha)
 
 	//Set the projection X and Y
 	projX := float32(Width()) / b.Zoom
@@ -125,10 +156,6 @@ func (b *UIRenderer) Begin() *UIRenderer {
 	//Clear the cache
 	b.texture = nil
 	b.sprite = nil
-
-	//Enable the blending
-	GL.Enable(GlBlend)
-	GL.BlendFunc(GlOne, GlOneMinusSrcAlpha)
 	return b
 }
 
@@ -166,6 +193,19 @@ func (b *UIRenderer) flush() {
 	GL.BufferSubData(GlArrayBuffer, 0, b.vertices)
 	GL.DrawElements(GlTriangles, 6*b.index, GlUnsignedShort, 0)
 
+	//Draw the debug outlines. This involves unbinding the texture,
+	// then drawing all the triangles. If loops is enabled, then we will go in pairs.
+	if DebugDraw {
+		GL.UnbindTexture(b.texture.target)
+		if DebugDrawLoops {
+			for dloop := 0; dloop < b.index; dloop++ {
+				GL.DrawElements(GlLineLoop, 6, GlUnsignedShort, 4*dloop*3)
+			}
+		} else {
+			GL.DrawElements(GlLines, 6*b.index, GlUnsignedShort, 0)
+		}
+	}
+
 	//Reset the index
 	b.index = 0
 }
@@ -187,30 +227,33 @@ func (b *UIRenderer) Draw(rect Rectangle, color Color) {
 		log.Fatal("Batch.Begin() must be called first")
 	}
 
+	if b.sprite == nil {
+		log.Fatal("Renderer.SetSprite must be called first")
+	}
+
+	if b.scaleInput {
+		rect = rect.SetPosition(rect.Position().Divide(b.scale))
+		rect = rect.SetSize(rect.Size().Divide(b.scale))
+	}
+
 	//Prepare position and scale
-	x := rect.X
-	y := rect.Y
-	scaleX := rect.Width
-	scaleY := rect.Height
+	pos := rect.Position()
+	size := rect.Size()
+
+	x := pos.X
+	y := pos.Y
+	scaleX := b.scale //scale.X
+	scaleY := b.scale //scale.Y
 
 	//Unsused additional details that can be used for rotations and stuff
 	rotation := float32(0)
-	originX := float32(0)
-	originY := float32(0)
 
-	//Setup the origins
-	x -= originX * float32(b.sprite.Width())
-	y -= originY * float32(b.sprite.Height())
-
-	originX = float32(b.sprite.Width()) * originX
-	originY = float32(b.sprite.Height()) * originY
-
-	worldOriginX := x + originX
-	worldOriginY := y + originY
-	fx := -originX
-	fy := -originY
-	fx2 := float32(b.sprite.Width()) - originX
-	fy2 := float32(b.sprite.Height()) - originY
+	worldOriginX := x
+	worldOriginY := y
+	fx := float32(0)
+	fy := float32(0)
+	fx2 := size.X
+	fy2 := size.Y
 
 	//Update the scale
 	if scaleX != 1 || scaleY != 1 {

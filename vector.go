@@ -119,7 +119,11 @@ func (v Vector2) DivideV(v2 Vector2) Vector2 {
 
 //Normalize a vector
 func (v Vector2) Normalize() Vector2 {
-	return v.Divide(v.Length())
+	len := v.Length()
+	if len == 0 {
+		return v
+	}
+	return v.Divide(len)
 }
 
 //Lerp a vector towards another vector
