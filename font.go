@@ -186,11 +186,12 @@ func (gstr *GlyphString) GetTexture() *Texture { return gstr.font.GetTexture() }
 //RenderSprites uses the SpriteRenderer to draw the glyphs. Its main purpose is to serve as an example on how a renderer could be writen for the fonts.
 // see noodle/font.go for this function.
 func (gstr *GlyphString) RenderSprites(renderer *SpriteRenderer, position Vector2, scale float32, color Color) {
+
 	//Iterate over every position. This represents a new glyph
 	for i := range gstr.Positions {
 
 		//Prepare the position of the glyph, which is the current position, shifted
-		pos := gstr.Positions[i].Add(position)
+		pos := gstr.Positions[i].Scale(scale).Add(position)
 		tex := gstr.font.texture //This is using internals, but you could use gstr.GetTexture() instead here.
 
 		//Prepare the transform and sprite
