@@ -541,6 +541,11 @@ func NewTransform(translation Vector3, rotation Quaternion, scale Vector3) Trans
 	}
 }
 
+//ToMatrix turns this tranform into a matrix that performs it.
+func (t Transform) ToMatrix() Matrix {
+	return NewMatrixTransform(t)
+}
+
 //Transform2D is a structure of tranlsation, rotation and scale properties
 type Transform2D struct {
 	Position Vector2

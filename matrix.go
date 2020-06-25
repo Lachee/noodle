@@ -1,7 +1,9 @@
 package noodle
 
-import "unsafe"
-import "math"
+import (
+	"math"
+	"unsafe"
+)
 
 //Matrix A representation of a 4 x 4 matrix
 type Matrix struct {
@@ -41,8 +43,8 @@ type Matrix struct {
 	M1 float32
 	M2 float32
 	M3 float32
-	
-	M4   float32
+
+	M4 float32
 	M5 float32
 	M6 float32
 	M7 float32
@@ -60,8 +62,8 @@ type Matrix struct {
 
 func newMatrixFromPointer(ptr unsafe.Pointer) Matrix { return *(*Matrix)(ptr) }
 
-//NewMatrixFromQuaternion creates a new rotation matrix from a quaternion
-func NewMatrixFromQuaternion(q Quaternion) Matrix {
+//NewMatrixQuaternion creates a new rotation matrix from a quaternion
+func NewMatrixQuaternion(q Quaternion) Matrix {
 	x := float32(q.X)
 	y := float32(q.Y)
 	z := float32(q.Z)
@@ -108,22 +110,22 @@ func NewMatrixIdentity() Matrix {
 	return Matrix{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1}
 }
 
-//NewMatrixTranslate creates a blank translation matrix
-func NewMatrixTranslate(x, y, z float32) Matrix {
-	return Matrix{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, x, y, z, 1}
+//NewMatrixTranslate creates a blank translation matrix from vector
+func NewMatrixTranslate(v Vector3) Matrix {
+	return Matrix{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, v.X, v.Y, v.Z, 1}
 }
 
-//NewMatrixTranslateV creates a blank translation matrix from vector
-func NewMatrixTranslateV(v Vector3) Matrix {
-	return Matrix{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, v.X, v.Y, v.Z, 1}
+//NewMatrixTranslate32 creates a blank translation matrix
+func NewMatrixTranslate32(x, y, z float32) Matrix {
+	return Matrix{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, x, y, z, 1}
 }
 
 //NewMatrixTranslate64 creates a blank translation matrix
 func NewMatrixTranslate64(x, y, z float64) Matrix {
-	return NewMatrixTranslate(float32(x), float32(y), float32(z))
+	return NewMatrixTranslate32(float32(x), float32(y), float32(z))
 }
 
-//NewMatrixRotate creates a rotation matrix based of the acis and radians
+//NewMatrixRotate creates a rotation matrix based of the axis and radians
 func NewMatrixRotate(axis Vector3, radians float32) Matrix {
 	x := float32(axis.X)
 	y := float32(axis.Y)
@@ -160,6 +162,11 @@ func NewMatrixRotate(axis Vector3, radians float32) Matrix {
 		M14: 0,
 		M15: 1,
 	}
+}
+
+//NewMatrixTransform creates a new matrix based off a transform
+func NewMatrixTransform(transform Transform) Matrix {
+	return NewMatrixTranslate(transform.Position).Multiply(NewMatrixQuaternion(transform.Rotation)).Multiply(NewMatrixScale(transform.Scale))
 }
 
 //ToQuaternion turns the rotation matrix into a Quaternion. Alias of newQuaternionFromMatrix
@@ -543,7 +550,7 @@ func NewMatrixLookAt(eye, target, up Vector3) Matrix {
 	}
 
 	//	return M.Mul4(Translate3D(float32(-eye[0]), float32(-eye[1]), float32(-eye[2])))
-	return matrix.Multiply(NewMatrixTranslate(-eye.X, -eye.Y, -eye.Z))
+	return matrix.Multiply(NewMatrixTranslate32(-eye.X, -eye.Y, -eye.Z))
 }
 
 //Decompose turns a matrix into an slice of floats

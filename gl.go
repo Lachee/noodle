@@ -204,13 +204,6 @@ func (gl *WebGL) BlendFunc(sFactor GLEnum, gFactor GLEnum) {
 	gl.context.Call("blendFunc", sFactor, gFactor)
 }
 
-//UniformMatrix4fv specify matrix values for uniform variables.
-func (gl *WebGL) UniformMatrix4fv(location WebGLUniformLocation, matrix Matrix) {
-	buffer := matrix.DecomposePointer()
-	typedBuffer := sliceToTypedArray([]float32((*buffer)[:]))
-	gl.context.Call("uniformMatrix4fv", location, false, typedBuffer)
-}
-
 //Enable enables a option
 func (gl *WebGL) Enable(option GLEnum) {
 	gl.context.Call("enable", option)
@@ -321,6 +314,13 @@ func (gl *WebGL) Uniform2iv(location WebGLUniformLocation, value []int) {
 func (gl *WebGL) Uniform2v(location WebGLUniformLocation, value Vector2) {
 	tmp := sliceToTypedArray([]float32((*value.DecomposePointer())[:]))
 	gl.context.Call("uniform2fv", location, tmp)
+}
+
+//UniformMatrix4fv specify matrix values for uniform variables.
+func (gl *WebGL) UniformMatrix4fv(location WebGLUniformLocation, matrix Matrix) {
+	buffer := matrix.DecomposePointer()
+	typedBuffer := sliceToTypedArray([]float32((*buffer)[:]))
+	gl.context.Call("uniformMatrix4fv", location, false, typedBuffer)
 }
 
 //Call the internal context and reutrns the JS value

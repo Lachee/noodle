@@ -1,7 +1,5 @@
 package noodle
 
-import "log"
-
 //Key is a Keycode representation of a keyboard character.
 // use the https://keycode.info/ tool to help identify missing key codes
 type Key int
@@ -165,10 +163,6 @@ func (i *InputHandler) setMouseUp(button int) {
 
 func (i *InputHandler) setKeyDown(key int) {
 	i.keyStates[Key(key)] = keyStatePrePressed
-	log.Println("Mouse Down", key)
-	if DebugDraw {
-		log.Println("Mouse Down", key)
-	}
 }
 func (i *InputHandler) setKeyUp(key int) {
 	i.keyStates[Key(key)] = keyStatePreRelease

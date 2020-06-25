@@ -209,7 +209,7 @@ func (q Quaternion) Slerp(q2 Quaternion, amount float32) Quaternion {
 
 //ToMatrix converts the quaternion into a rotation matrix
 func (q Quaternion) ToMatrix() Matrix {
-	return NewMatrixFromQuaternion(q)
+	return NewMatrixQuaternion(q)
 }
 
 //ToAxisAngle returns the rotation angle and axis for a given quaternion
