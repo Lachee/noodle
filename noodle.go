@@ -206,7 +206,7 @@ func Exit() {
 //onRequestAnimationFrame callback for animations
 func onRequestAnimationFrame(this js.Value, args []js.Value) interface{} {
 	//Setupt he time
-	time := args[0].Float()
+	time := args[0].Float() / 1000
 	deltaTime = time - frameTime
 	frameTime = time
 	frameCount++
