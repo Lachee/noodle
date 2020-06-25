@@ -161,9 +161,6 @@ func NewMatrixTransform(transform Transform) Matrix {
 	return NewMatrixTranslate(transform.Position).Multiply(NewMatrixQuaternion(transform.Rotation)).Multiply(NewMatrixScale(transform.Scale))
 }
 
-//ToQuaternion turns the rotation matrix into a Quaternion. Alias of newQuaternionFromMatrix
-func (m Matrix) ToQuaternion() Quaternion { return NewQuaternionFromMatrix(m) }
-
 //Trace of the matrix (sum of values along diagonal)
 func (m Matrix) Trace() float32 {
 	return m.M0 + m.M5 + m.M10 + m.M15
@@ -432,28 +429,6 @@ func (m Matrix) Multiply(right Matrix) Matrix {
 		m1[2]*m2[12] + m1[6]*m2[13] + m1[10]*m2[14] + m1[14]*m2[15],
 		m1[3]*m2[12] + m1[7]*m2[13] + m1[11]*m2[14] + m1[15]*m2[15],
 	}
-
-	/*
-
-		return Matrix{
-			M0:  m.M0*right.M0 + m.M1*right.M4 + m.M2*right.M8 + m.M3*right.M12,
-			M1:  m.M0*right.M1 + m.M1*right.M5 + m.M2*right.M9 + m.M3*right.M13,
-			M2:  m.M0*right.M2 + m.M1*right.M6 + m.M2*right.M10 + m.M3*right.M14,
-			M3:  m.M0*right.M3 + m.M1*right.M7 + m.M2*right.M11 + m.M3*right.M15,
-			M4:  m.M4*right.M0 + m.M5*right.M4 + m.M6*right.M8 + m.M7*right.M12,
-			M5:  m.M4*right.M1 + m.M5*right.M5 + m.M6*right.M9 + m.M7*right.M13,
-			M6:  m.M4*right.M2 + m.M5*right.M6 + m.M6*right.M10 + m.M7*right.M14,
-			M7:  m.M4*right.M3 + m.M5*right.M7 + m.M6*right.M11 + m.M7*right.M15,
-			M8:  m.M8*right.M0 + m.M9*right.M4 + m.M10*right.M8 + m.M11*right.M12,
-			M9:  m.M8*right.M1 + m.M9*right.M5 + m.M10*right.M9 + m.M11*right.M13,
-			M10: m.M8*right.M2 + m.M9*right.M6 + m.M10*right.M10 + m.M11*right.M14,
-			M11: m.M8*right.M3 + m.M9*right.M7 + m.M10*right.M11 + m.M11*right.M15,
-			M12: m.M12*right.M0 + m.M13*right.M4 + m.M14*right.M8 + m.M15*right.M12,
-			M13: m.M12*right.M1 + m.M13*right.M5 + m.M14*right.M9 + m.M15*right.M13,
-			M14: m.M12*right.M2 + m.M13*right.M6 + m.M14*right.M10 + m.M15*right.M14,
-			M15: m.M12*right.M3 + m.M13*right.M7 + m.M14*right.M11 + m.M15*right.M15,
-		}
-	*/
 }
 
 //NewMatrixFrustum creates a new perspective projection matrix

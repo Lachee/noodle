@@ -371,11 +371,6 @@ func (v Vector3) Max(v2 Vector3) Vector3 {
 	}
 }
 
-//QuaternionToo calculates the Quaternion between the current vector and the next
-func (v Vector3) QuaternionToo(v2 Vector3) Quaternion {
-	return NewQuaternionVector3ToVector3(v, v2)
-}
-
 //Barycenter computers the coordinates (u, v, w) for the vector with respect to triangle (a, b, c). Assumes vector is on plane with triangle
 func (v Vector3) Barycenter(a, b, c Vector3) Vector3 {
 	v0 := b.Subtract(a)
@@ -530,6 +525,15 @@ type Transform struct {
 	Position Vector3
 	Rotation Quaternion
 	Scale    Vector3
+}
+
+//NewTransformIdentity creates a new blank transform
+func NewTransformIdentity() Transform {
+	return Transform{
+		Position: Vector3{0, 0, 0},
+		Rotation: NewQuaternionIdentity(),
+		Scale:    Vector3{1, 1, 1},
+	}
 }
 
 //NewTransform creates a new transform

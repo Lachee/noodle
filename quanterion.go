@@ -2,7 +2,13 @@ package noodle
 
 import "math"
 
+/*
+Copyright (c) 2020 Lachee
+Copyright ©2013 The go-gl Authors. All rights reserved.
+*/
+
 //https://github.com/raysan5/raylib/blob/master/src/raymath.h
+//https://github.com/go-gl/mathgl/blob/master/mgl32/quat.go
 
 //Quaternion A represntation of rotations that does not suffer from gimbal lock
 type Quaternion struct {
@@ -15,81 +21,62 @@ type Quaternion struct {
 //NewQuaternionIdentity creates a Quaternion Identity (a blank quaternion)
 func NewQuaternionIdentity() Quaternion { return Quaternion{X: 0, Y: 0, Z: 0, W: 1} }
 
-//NewQuaternionVector3ToVector3 creates a quaternion that is the angle between 2 vectors
-func NewQuaternionVector3ToVector3(from, too Vector3) Quaternion {
+//newQuaternionVector3ToVector3 creates a quaternion that is the angle between 2 vectors
+func newQuaternionVector3ToVector3(from, too Vector3) Quaternion {
 	cos2theta := from.DotProduct(too)
 	cross := from.CrossProduct(too)
 	return Quaternion{X: cross.X, Y: cross.Y, Z: cross.Z, W: 1 + cos2theta}.Normalize()
 }
 
-//NewQuaternionFromAxisAngle creates a quaternion from an axis and its rotation
-func NewQuaternionFromAxisAngle(axis Vector3, angle float32) Quaternion {
+//NewQuaternionBetweenVectors creates a rotation between the two vectors.
+func NewQuaternionBetweenVectors(start, dest Vector3) Quaternion {
+	//https://github.com/go-gl/mathgl/blob/master/mgl32/quat.go#L431
+	start = start.Normalize()
+	dest = dest.Normalize()
+	epsilon := float32(0.001)
+	cosTheta := start.DotProduct(dest)
 
-	if axis.Length() != 0 {
-		angle *= 0.5
+	if cosTheta < -1.0+epsilon {
+		// special case when vectors in opposite directions:
+		// there is no "ideal" rotation axis
+		// So guess one; any will do as long as it's perpendicular to start
+		axis := Vector3{1, 0, 0}.CrossProduct(start)
+		if axis.DotProduct(axis) < epsilon {
+			// bad luck, they were parallel, try again!
+			axis = Vector3{0, 1, 0}.CrossProduct(start)
+		}
+
+		return NewQuaternionAxisAngle(axis.Normalize(), PI)
 	}
 
+	axis := start.CrossProduct(dest)
+	s := float32(math.Sqrt(float64(1.0+cosTheta) * 2.0))
+
+	comps := axis.Scale(1.0 / s)
+	return Quaternion{
+		comps.X,
+		comps.Y,
+		comps.Z,
+		s * 0.5,
+	}
+}
+
+//NewQuaternionAxisAngle creates a quaternion from an axis and its rotation
+func NewQuaternionAxisAngle(axis Vector3, angle float32) Quaternion {
+
+	//If the axis isn't 0, we will just extream it a bit.
+	//if axis.Length() != 0 {
+	//	angle *= 0.5
+	//}
+
 	axis = axis.Normalize()
-
-	sinres := float32(math.Sin(float64(angle)))
 	cosres := float32(math.Cos(float64(angle)))
-
+	sinres := float32(math.Sin(float64(angle)))
 	return Quaternion{X: axis.X * sinres, Y: axis.Y * sinres, Z: axis.Z * sinres, W: cosres}.Normalize()
 }
 
-//NewQuaternionFromMatrix creates a Quaternion from a rotation matrix
-func NewQuaternionFromMatrix(mat Matrix) Quaternion {
-	var s float32
-	var invS float32
-	trace := mat.Trace()
-
-	if trace > 0 {
-		s = float32(math.Sqrt(float64(trace+1)) * 2)
-		invS = 1 / s
-		return Quaternion{
-			X: (mat.M6 - mat.M9) * invS,
-			Y: (mat.M8 - mat.M2) * invS,
-			Z: (mat.M1 - mat.M4) * invS,
-			W: s * 0.25,
-		}
-	}
-
-	m00 := mat.M0
-	m11 := mat.M5
-	m22 := mat.M10
-
-	if m00 > m11 && m00 > m22 {
-		s = float32(math.Sqrt(float64(1+m00-m11-m22)) * 2)
-		invS = 1 / s
-		return Quaternion{
-			X: s * 0.25,
-			Y: (mat.M4 - mat.M1) * invS,
-			Z: (mat.M8 - mat.M2) * invS,
-			W: (mat.M6 - mat.M9) * invS,
-		}
-	} else if m11 > m22 {
-		s = float32(math.Sqrt(float64(1+m11-m00-m22)) * 2)
-		invS = 1 / s
-		return Quaternion{
-			X: (mat.M4 - mat.M1) * invS,
-			Y: s * 0.25,
-			Z: (mat.M9 - mat.M6) * invS,
-			W: (mat.M8 - mat.M2) * invS,
-		}
-	}
-
-	s = float32(math.Sqrt(float64(1+m22-m00-m11)) * 2)
-	invS = 1 / s
-	return Quaternion{
-		X: (mat.M8 - mat.M2) * invS,
-		Y: (mat.M9 - mat.M6) * invS,
-		Z: s * 0.25,
-		W: (mat.M1 - mat.M4) * invS,
-	}
-}
-
-//NewQuaternionFromEuler creates a quaternion from euler angles (roll, yaw, pitch)
-func NewQuaternionFromEuler(euler Vector3) Quaternion {
+//NewQuaternionEuler creates a quaternion from euler angles (roll, yaw, pitch)
+func NewQuaternionEuler(euler Vector3) Quaternion {
 	x0 := float32(math.Cos(float64(euler.X * 0.5)))
 	x1 := float32(math.Sin(float64(euler.X * 0.5)))
 	y0 := float32(math.Cos(float64(euler.Y * 0.5)))
@@ -102,6 +89,78 @@ func NewQuaternionFromEuler(euler Vector3) Quaternion {
 		Z: x0*y0*z1 - x1*y1*z0,
 		W: x0*y0*z0 + x1*y1*z1,
 	}
+}
+
+// NewQuaternionMatrix converts a pure rotation matrix into a quaternion
+func NewQuaternionMatrix(matrix Matrix) Quaternion {
+	m := matrix.DecomposePointer()
+
+	// http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/index.htm
+
+	if tr := m[0] + m[5] + m[10]; tr > 0 {
+		s := float32(0.5 / math.Sqrt(float64(tr+1.0)))
+		return Quaternion{
+			(m[6] - m[9]) * s,
+			(m[8] - m[2]) * s,
+			(m[1] - m[4]) * s,
+			0.25 / s,
+		}
+	}
+
+	if (m[0] > m[5]) && (m[0] > m[10]) {
+		s := float32(2.0 * math.Sqrt(float64(1.0+m[0]-m[5]-m[10])))
+		return Quaternion{
+			0.25 * s,
+			(m[4] + m[1]) / s,
+			(m[8] + m[2]) / s,
+			(m[6] - m[9]) / s,
+		}
+	}
+
+	if m[5] > m[10] {
+		s := float32(2.0 * math.Sqrt(float64(1.0+m[5]-m[0]-m[10])))
+		return Quaternion{
+			(m[4] + m[1]) / s,
+			0.25 * s,
+			(m[9] + m[6]) / s,
+			(m[8] - m[2]) / s,
+		}
+
+	}
+
+	s := float32(2.0 * math.Sqrt(float64(1.0+m[10]-m[0]-m[5])))
+	return Quaternion{
+		(m[8] + m[2]) / s,
+		(m[9] + m[6]) / s,
+		0.25 * s,
+		(m[1] - m[4]) / s,
+	}
+}
+
+//NewQuaternionLookAt creates a rotation from the eye to the center, with the give up.
+func NewQuaternionLookAt(eye, center, up Vector3) Quaternion {
+	// https://github.com/go-gl/mathgl/blob/master/mgl32/quat.go#L406
+	// http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-17-quaternions/#I_need_an_equivalent_of_gluLookAt__How_do_I_orient_an_object_towards_a_point__
+	// https://bitbucket.org/sinbad/ogre/src/d2ef494c4a2f5d6e2f0f17d3bfb9fd936d5423bb/OgreMain/src/OgreCamera.cpp?at=default#cl-161
+
+	direction := center.Subtract(eye).Normalize()
+
+	// Find the rotation between the front of the object (that we assume towards Z-,
+	// but this depends on your model) and the desired direction
+	rotDir := NewQuaternionBetweenVectors(Vector3{0, 0, -1}, direction)
+
+	// Recompute up so that it's perpendicular to the direction
+	// You can skip that part if you really want to force up
+	//right := direction.Cross(up)
+	//up = right.Cross(direction)
+
+	// Because of the 1rst rotation, the up is probably completely screwed up.
+	// Find the rotation between the "up" of the rotated object, and the desired up
+	upCur := rotDir.Rotate(Vector3{0, 1, 0})
+	rotUp := NewQuaternionBetweenVectors(upCur, up)
+
+	rotTarget := rotUp.Multiply(rotDir) // remember, in reverse order.
+	return rotTarget.Invert()           // camera rotation should be inversed!
 }
 
 //Invert a quaternions components
@@ -207,9 +266,69 @@ func (q Quaternion) Slerp(q2 Quaternion, amount float32) Quaternion {
 	}
 }
 
+// Rotate a vector by the rotation this quaternion represents.
+func (q Quaternion) Rotate(v Vector3) Vector3 {
+	qv := Vector3{q.X, q.Y, q.Z}
+	cross := qv.CrossProduct(v)
+	return v.Add(cross.Scale(2 * q.W)).Add(qv.Scale(2).CrossProduct(cross))
+}
+
+//ToAxisAngle returns the rotation angle and axis for a given quaternion
+func (q Quaternion) ToAxisAngle() (Vector3, float32) {
+
+	var den float32
+	var resAngle float32
+	var resAxis Vector3
+
+	if math.Abs(float64(q.W)) > 1 {
+		q = q.Normalize()
+	}
+
+	resAxis = Vector3{0, 0, 0}
+	resAngle = 2 * float32(math.Atan(float64(q.W)))
+	den = float32(math.Sqrt(float64(1 - q.W*q.W)))
+	if den > 0.0001 {
+		resAxis.X = q.X / den
+		resAxis.Y = q.Y / den
+		resAxis.Z = q.Z / den
+	} else {
+		resAxis.X = 1
+	}
+
+	return resAxis, resAngle
+}
+
+//ToEuler turns the quaternion into equivalent euler angles (roll, putch, yaw). Values are returned in Degrees
+func (q Quaternion) ToEuler() Vector3 {
+	x0 := 2 * (q.W*q.X + q.Y*q.Z)
+	x1 := 1 - 2*(q.X*q.X+q.Y*q.Y)
+	y0 := Clamp(float64(2*(q.W*q.Y-q.Z*q.X)), -1, 1)
+	z0 := 2 * (q.W*q.Z + q.X*q.Y)
+	z1 := 1 - 2*(q.Y*q.Y+q.Z*q.Z)
+
+	return Vector3{
+		X: float32(math.Atan2(float64(x0), float64(x1))) * Rad2Deg,
+		Y: float32(math.Asin(y0)) * Rad2Deg,
+		Z: float32(math.Atan2(float64(z0), float64(z1))) * Rad2Deg,
+	}
+}
+
+//ToMatrix turns the quaternion into a matrix representation
+func (q Quaternion) ToMatrix() Matrix {
+	w, x, y, z := q.W, q.X, q.Y, q.Z
+	return Matrix{
+		1 - 2*y*y - 2*z*z, 2*x*y + 2*w*z, 2*x*z - 2*w*y, 0,
+		2*x*y - 2*w*z, 1 - 2*x*x - 2*z*z, 2*y*z + 2*w*x, 0,
+		2*x*z + 2*w*y, 2*y*z - 2*w*x, 1 - 2*x*x - 2*y*y, 0,
+		0, 0, 0, 1,
+	}
+}
+
+/*
+
 //NewQuaternionLookRotation looks at a point
 // https://answers.unity.com/questions/467614/what-is-the-source-code-of-quaternionlookrotation.html
-func NewQuaternionLookRotation(forward, up Vector3) Quaternion {
+func newQuaternionLookRotation(forward, up Vector3) Quaternion {
 	var quaternion = NewQuaternionIdentity()
 
 	v := forward.Normalize()
@@ -266,58 +385,4 @@ func NewQuaternionLookRotation(forward, up Vector3) Quaternion {
 	quaternion.W = (m01 - m10) * num2
 	return quaternion
 }
-
-//ToMatrix converts the quaternion into a rotation matrix
-func (q Quaternion) ToMatrix() Matrix {
-	return NewMatrixQuaternion(q)
-}
-
-//ToAxisAngle returns the rotation angle and axis for a given quaternion
-func (q Quaternion) ToAxisAngle() (Vector3, float32) {
-
-	var den float32
-	var resAngle float32
-	var resAxis Vector3
-
-	if math.Abs(float64(q.W)) > 1 {
-		q = q.Normalize()
-	}
-
-	resAxis = Vector3{0, 0, 0}
-	resAngle = 2 * float32(math.Atan(float64(q.W)))
-	den = float32(math.Sqrt(float64(1 - q.W*q.W)))
-	if den > 0.0001 {
-		resAxis.X = q.X / den
-		resAxis.Y = q.Y / den
-		resAxis.Z = q.Z / den
-	} else {
-		resAxis.X = 1
-	}
-
-	return resAxis, resAngle
-}
-
-//ToEuler turns the quaternion into equivalent euler angles (roll, putch, yaw). Values are returned in Degrees
-func (q Quaternion) ToEuler() Vector3 {
-	x0 := 2 * (q.W*q.X + q.Y*q.Z)
-	x1 := 1 - 2*(q.X*q.X+q.Y*q.Y)
-	y0 := Clamp(float64(2*(q.W*q.Y-q.Z*q.X)), -1, 1)
-	z0 := 2 * (q.W*q.Z + q.X*q.Y)
-	z1 := 1 - 2*(q.Y*q.Y+q.Z*q.Z)
-
-	return Vector3{
-		X: float32(math.Atan2(float64(x0), float64(x1))) * Rad2Deg,
-		Y: float32(math.Asin(y0)) * Rad2Deg,
-		Z: float32(math.Atan2(float64(z0), float64(z1))) * Rad2Deg,
-	}
-}
-
-//Transform a quaternion, given a transformation matrix
-func (q Quaternion) Transform(mat Matrix) Quaternion {
-	return Quaternion{
-		X: mat.M0*q.X + mat.M4*q.Y + mat.M8*q.Z + mat.M12*q.W,
-		Y: mat.M1*q.X + mat.M5*q.Y + mat.M9*q.Z + mat.M13*q.W,
-		Z: mat.M2*q.X + mat.M6*q.Y + mat.M10*q.Z + mat.M14*q.W,
-		W: mat.M3*q.X + mat.M7*q.Y + mat.M11*q.Z + mat.M15*q.W,
-	}
-}
+*/
