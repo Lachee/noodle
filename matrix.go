@@ -63,45 +63,37 @@ type Matrix struct {
 func newMatrixFromPointer(ptr unsafe.Pointer) Matrix { return *(*Matrix)(ptr) }
 
 //NewMatrixQuaternion creates a new rotation matrix from a quaternion
+// https://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToMatrix/index.htm
 func NewMatrixQuaternion(q Quaternion) Matrix {
-	x := float32(q.X)
-	y := float32(q.Y)
-	z := float32(q.Z)
-	w := float32(q.W)
-	x2 := x + x
-	y2 := y + y
-	z2 := z + z
-	lengthSquared := float32(q.SqrLength())
+	sqw := q.W * q.W
+	sqx := q.X * q.X
+	sqy := q.Y * q.Y
+	sqz := q.Z * q.Z
 
-	xx := x * x2 / lengthSquared
-	xy := x * y2 / lengthSquared
-	xz := x * z2 / lengthSquared
+	invs := 1 / (sqx + sqy + sqz + sqw)
+	m00 := (sqx - sqy - sqz + sqw) * invs // since sqw + sqx + sqy + sqz =1/invs*invs
+	m11 := (-sqx + sqy - sqz + sqw) * invs
+	m22 := (-sqx - sqy + sqz + sqw) * invs
 
-	yy := y * y2 / lengthSquared
-	yz := y * z2 / lengthSquared
-	zz := z * z2 / lengthSquared
+	tmp1 := q.X * q.Y
+	tmp2 := q.Z * q.W
+	m10 := 2.0 * (tmp1 + tmp2) * invs
+	m01 := 2.0 * (tmp1 - tmp2) * invs
 
-	wx := w * x2 / lengthSquared
-	wy := w * y2 / lengthSquared
-	wz := w * z2 / lengthSquared
+	tmp1 = q.X * q.Z
+	tmp2 = q.Y * q.W
+	m20 := 2.0 * (tmp1 - tmp2) * invs
+	m02 := 2.0 * (tmp1 + tmp2) * invs
 
+	tmp1 = q.Y * q.Z
+	tmp2 = q.X * q.W
+	m21 := 2.0 * (tmp1 + tmp2) * invs
+	m12 := 2.0 * (tmp1 - tmp2) * invs
 	return Matrix{
-		M0:  1.0 - (yy + zz),
-		M1:  xy - wz,
-		M2:  xz + wy,
-		M3:  0.0,
-		M4:  xy + wz,
-		M5:  1.0 - (xx + zz),
-		M6:  yz - wx,
-		M7:  0.0,
-		M8:  xz - wy,
-		M9:  yz + wx,
-		M10: 1.0 - (xx + yy),
-		M11: 0.0,
-		M12: 0.0,
-		M13: 0.0,
-		M14: 0.0,
-		M15: 1.0,
+		m00, m01, m02, 0,
+		m10, m11, m12, 0,
+		m20, m21, m22, 0,
+		0, 0, 0, 1,
 	}
 }
 

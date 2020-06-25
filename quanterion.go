@@ -207,6 +207,66 @@ func (q Quaternion) Slerp(q2 Quaternion, amount float32) Quaternion {
 	}
 }
 
+//NewQuaternionLookRotation looks at a point
+// https://answers.unity.com/questions/467614/what-is-the-source-code-of-quaternionlookrotation.html
+func NewQuaternionLookRotation(forward, up Vector3) Quaternion {
+	var quaternion = NewQuaternionIdentity()
+
+	v := forward.Normalize()
+	v2 := up.CrossProduct(v).Normalize()
+	v3 := v.CrossProduct(v2)
+
+	var m00 = v2.X
+	var m01 = v2.Y
+	var m02 = v2.Z
+	var m10 = v3.X
+	var m11 = v3.Y
+	var m12 = v3.Z
+	var m20 = v.X
+	var m21 = v.Y
+	var m22 = v.Z
+
+	num8 := (m00 + m11) + m22
+
+	if num8 > 0 {
+		num := float32(math.Sqrt(float64(num8) + 1.0))
+		quaternion.W = num * 0.5
+		num = 0.5 / num
+		quaternion.X = (m12 - m21) * num
+		quaternion.Y = (m20 - m02) * num
+		quaternion.Z = (m01 - m10) * num
+		return quaternion
+	}
+
+	if (m00 >= m11) && (m00 >= m22) {
+		var num7 = float32(math.Sqrt(float64(((1.0 + m00) - m11) - m22)))
+		var num4 = 0.5 / num7
+		quaternion.X = 0.5 * num7
+		quaternion.Y = (m01 + m10) * num4
+		quaternion.Z = (m02 + m20) * num4
+		quaternion.W = (m12 - m21) * num4
+		return quaternion
+	}
+
+	if m11 > m22 {
+		var num6 = float32(math.Sqrt(float64(((1 + m11) - m00) - m22)))
+		var num3 = 0.5 / num6
+		quaternion.X = (m10 + m01) * num3
+		quaternion.Y = 0.5 * num6
+		quaternion.Z = (m21 + m12) * num3
+		quaternion.W = (m20 - m02) * num3
+		return quaternion
+	}
+
+	var num5 = float32(math.Sqrt(float64(((1 + m22) - m00) - m11)))
+	var num2 = 0.5 / num5
+	quaternion.X = (m20 + m02) * num2
+	quaternion.Y = (m21 + m12) * num2
+	quaternion.Z = 0.5 * num5
+	quaternion.W = (m01 - m10) * num2
+	return quaternion
+}
+
 //ToMatrix converts the quaternion into a rotation matrix
 func (q Quaternion) ToMatrix() Matrix {
 	return NewMatrixQuaternion(q)
