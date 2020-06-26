@@ -431,62 +431,25 @@ func (m Matrix) Multiply(right Matrix) Matrix {
 	}
 }
 
-//NewMatrixFrustum creates a new perspective projection matrix
-func NewMatrixFrustum(left, right, bottom, top, near, far float64) Matrix {
-	rl := (right - left)
-	tb := (top - bottom)
-	fn := (far - near)
-
-	return Matrix{
-		M0:  float32((near * 2) / rl),
-		M1:  0,
-		M2:  0,
-		M3:  0,
-		M4:  0,
-		M5:  float32((near * 2) / tb),
-		M6:  0,
-		M7:  0,
-		M8:  float32((right + left) / rl),
-		M9:  float32((top + bottom) / tb),
-		M10: float32(-(far + near) / fn),
-		M11: -1,
-		M12: 0,
-		M13: 0,
-		M14: float32(-(far * near * 2) / fn),
-		M15: 0,
-	}
-}
-
-//NewMatrixPerspective creates a perspective projection matrix. Angles should be provided in radians
-func NewMatrixPerspective(fovy, aspect, near, far float64) Matrix {
-	top := near * math.Tan(fovy*0.5)
-	right := top * aspect
-	return NewMatrixFrustum(-right, right, -top, top, near, far)
+//NewMatrixPerspective creates a perspective projection matrix. FOVY is in degrees
+func NewMatrixPerspective(fovy, aspect, near, far float32) Matrix {
+	fovy = fovy * Deg2Rad
+	nmf, f := near-far, float32(1./math.Tan(float64(fovy)/2.0))
+	return Matrix{float32(f / aspect), 0, 0, 0, 0, float32(f), 0, 0, 0, 0, float32((near + far) / nmf), -1, 0, 0, float32((2. * far * near) / nmf), 0}
 }
 
 //NewMatrixOrtho creates a orthographic projection
-func NewMatrixOrtho(left, right, bottom, top, near, far float64) Matrix {
-	rl := (right - left)
-	tb := (top - bottom)
-	fn := (far - near)
-	return Matrix{
-		M0:  float32(2 / rl),
-		M1:  0,
-		M2:  0,
-		M3:  0,
-		M4:  0,
-		M5:  float32(2 / tb),
-		M6:  0,
-		M7:  0,
-		M8:  0,
-		M9:  0,
-		M10: float32(-2 / fn),
-		M11: 0,
-		M12: float32(-(left + right) / rl),
-		M13: float32(-(top + bottom) / tb),
-		M14: float32(-(far + near) / fn),
-		M15: 1,
-	}
+func NewMatrixOrtho(left, right, bottom, top, near, far float32) Matrix {
+	rml, tmb, fmn := (right - left), (top - bottom), (far - near)
+	return Matrix{float32(2. / rml), 0, 0, 0, 0, float32(2. / tmb), 0, 0, 0, 0, float32(-2. / fmn), 0, float32(-(right + left) / rml), float32(-(top + bottom) / tmb), float32(-(far + near) / fmn), 1}
+}
+
+// NewMatrixFrustum generates a Frustum Matrix.
+func NewMatrixFrustum(left, right, bottom, top, near, far float32) Matrix {
+	rml, tmb, fmn := (right - left), (top - bottom), (far - near)
+	A, B, C, D := (right+left)/rml, (top+bottom)/tmb, -(far+near)/fmn, -(2*far*near)/fmn
+
+	return Matrix{float32((2. * near) / rml), 0, 0, 0, 0, float32((2. * near) / tmb), 0, 0, float32(A), float32(B), float32(C), -1, 0, 0, float32(D), 0}
 }
 
 //NewMatrixLookAt creates a matrix to look at a target

@@ -227,12 +227,17 @@ func (v Vector3) DotProduct(v2 Vector3) float32 {
 }
 
 //CrossProduct of the vector
-func (v Vector3) CrossProduct(v2 Vector3) Vector3 {
-	return Vector3{
-		X: v.Y*v2.Z - v.Z*v2.Y,
-		Y: v.Z*v2.X - v.X*v2.Z,
-		Z: v.X*v2.Y - v.Y*v2.X,
-	}
+func (v Vector3) CrossProduct(other Vector3) Vector3 {
+	v1 := v.DecomposePointer()
+	v2 := other.DecomposePointer()
+	return Vector3{v1[1]*v2[2] - v1[2]*v2[1], v1[2]*v2[0] - v1[0]*v2[2], v1[0]*v2[1] - v1[1]*v2[0]}
+	/*
+		return Vector3{
+			X: v.Y*v2.Z - v.Z*v2.Y,
+			Y: v.Z*v2.X - v.X*v2.Z,
+			Z: v.X*v2.Y - v.Y*v2.X,
+		}
+	*/
 }
 
 //Perpendicular to this vector
@@ -321,8 +326,8 @@ func (v Vector3) Reflect(mirrorNormal Vector3) Vector3 {
 	return v.Subtract(mirrorNormal.Scale(2)).Scale(v.DotProduct(mirrorNormal))
 }
 
-//RotateByQuaternion rotates the vector
-func (v Vector3) RotateByQuaternion(q Quaternion) Vector3 {
+//Rotate rotates the vector
+func (v Vector3) Rotate(q Quaternion) Vector3 {
 	return Vector3{
 		X: v.X*(q.X*q.X+q.W*q.W-q.Y*q.Y-q.Z*q.Z) + v.Y*(2*q.X*q.Y-2*q.W*q.Z) + v.Z*(2*q.X*q.Z+2*q.W*q.Y),
 		Y: v.X*(2*q.W*q.Z+2*q.X*q.Y) + v.Y*(q.W*q.W-q.X*q.X+q.Y*q.Y-q.Z*q.Z) + v.Z*(-2*q.W*q.X+2*q.Y*q.Z),

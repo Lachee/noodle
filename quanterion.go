@@ -139,32 +139,13 @@ func NewQuaternionMatrix(matrix Matrix) Quaternion {
 
 //NewQuaternionLookAt creates a rotation from the eye to the center, with the give up.
 func NewQuaternionLookAt(eye, center, up Vector3) Quaternion {
-	// https://github.com/go-gl/mathgl/blob/master/mgl32/quat.go#L406
-	// http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-17-quaternions/#I_need_an_equivalent_of_gluLookAt__How_do_I_orient_an_object_towards_a_point__
-	// https://bitbucket.org/sinbad/ogre/src/d2ef494c4a2f5d6e2f0f17d3bfb9fd936d5423bb/OgreMain/src/OgreCamera.cpp?at=default#cl-161
 
-	direction := center.Subtract(eye).Normalize()
-
-	// Find the rotation between the front of the object (that we assume towards Z-,
-	// but this depends on your model) and the desired direction
-	rotDir := NewQuaternionBetweenVectors(Vector3{0, 0, -1}, direction)
-
-	// Recompute up so that it's perpendicular to the direction
-	// You can skip that part if you really want to force up
-	//right := direction.Cross(up)
-	//up = right.Cross(direction)
-
-	// Because of the 1rst rotation, the up is probably completely screwed up.
-	// Find the rotation between the "up" of the rotated object, and the desired up
-	upCur := rotDir.Rotate(Vector3{0, 1, 0})
-	rotUp := NewQuaternionBetweenVectors(upCur, up)
-
-	rotTarget := rotUp.Multiply(rotDir) // remember, in reverse order.
-	return rotTarget.Invert()           // camera rotation should be inversed!
+	matrix := NewMatrixLookAt(eye, center, up)
+	return NewQuaternionMatrix(matrix)
 }
 
-//Invert a quaternions components
-func (q Quaternion) Invert() Quaternion {
+//Inverse the quaternion
+func (q Quaternion) Inverse() Quaternion {
 	length := q.SqrLength()
 	if length != 0 {
 		i := 1 / length
@@ -267,10 +248,18 @@ func (q Quaternion) Slerp(q2 Quaternion, amount float32) Quaternion {
 }
 
 // Rotate a vector by the rotation this quaternion represents.
-func (q Quaternion) Rotate(v Vector3) Vector3 {
-	qv := Vector3{q.X, q.Y, q.Z}
-	cross := qv.CrossProduct(v)
-	return v.Add(cross.Scale(2 * q.W)).Add(qv.Scale(2).CrossProduct(cross))
+func (q Quaternion) Rotate(p1 Vector3) Vector3 {
+	x, y, z, w := q.X, q.Y, q.Z, q.W
+	p2 := Vector3{}
+	p2.X = w*w*p1.X + 2*y*w*p1.Z - 2*z*w*p1.Y + x*x*p1.X + 2*y*x*p1.Y + 2*z*x*p1.Z - z*z*p1.X - y*y*p1.X
+	p2.Y = 2*x*y*p1.X + y*y*p1.Y + 2*z*y*p1.Z + 2*w*z*p1.X - z*z*p1.Y + w*w*p1.Y - 2*x*w*p1.Z - x*x*p1.Y
+	p2.Z = 2*x*z*p1.X + 2*y*z*p1.Y + z*z*p1.Z - 2*w*y*p1.X - y*y*p1.Z + 2*w*x*p1.Y - x*x*p1.Z + w*w*p1.Z
+	return p2
+	/*
+		qv := Vector3{q.X, q.Y, q.Z}
+		cross := qv.CrossProduct(v)
+		return v.Add(cross.Scale(2 * q.W)).Add(qv.Scale(2).CrossProduct(cross))
+	*/
 }
 
 //ToAxisAngle returns the rotation angle and axis for a given quaternion
