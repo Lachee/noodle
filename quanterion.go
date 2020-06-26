@@ -75,7 +75,7 @@ func NewQuaternionAxisAngle(axis Vector3, angle float32) Quaternion {
 	return Quaternion{X: axis.X * sinres, Y: axis.Y * sinres, Z: axis.Z * sinres, W: cosres}.Normalize()
 }
 
-//NewQuaternionEuler creates a quaternion from euler angles (roll, yaw, pitch)
+//NewQuaternionEuler creates a quaternion from euler angles (roll, yaw, pitch) in radians
 func NewQuaternionEuler(euler Vector3) Quaternion {
 	x0 := float32(math.Cos(float64(euler.X * 0.5)))
 	x1 := float32(math.Sin(float64(euler.X * 0.5)))
@@ -248,18 +248,53 @@ func (q Quaternion) Slerp(q2 Quaternion, amount float32) Quaternion {
 }
 
 // Rotate a vector by the rotation this quaternion represents.
-func (q Quaternion) Rotate(p1 Vector3) Vector3 {
+func (q Quaternion) Rotate(v Vector3) Vector3 {
+	//x, y, z, w := q.X, q.Y, q.Z, q.W
+	//p2 := Vector3{}
+	//p2.X = w*w*p1.X + 2*y*w*p1.Z - 2*z*w*p1.Y + x*x*p1.X + 2*y*x*p1.Y + 2*z*x*p1.Z - z*z*p1.X - y*y*p1.X
+	//p2.Y = 2*x*y*p1.X + y*y*p1.Y + 2*z*y*p1.Z + 2*w*z*p1.X - z*z*p1.Y + w*w*p1.Y - 2*x*w*p1.Z - x*x*p1.Y
+	//p2.Z = 2*x*z*p1.X + 2*y*z*p1.Y + z*z*p1.Z - 2*w*y*p1.X - y*y*p1.Z + 2*w*x*p1.Y - x*x*p1.Z + w*w*p1.Z
+	//return p2
+
+	qv := Vector3{q.X, q.Y, q.Z}
+	cross := qv.CrossProduct(v)
+	return v.Add(cross.Scale(2 * q.W)).Add(qv.Scale(2).CrossProduct(cross))
+}
+
+//Forward returns a directional vector that is represented by this quaternion
+func (q Quaternion) Forward() Vector3 {
 	x, y, z, w := q.X, q.Y, q.Z, q.W
-	p2 := Vector3{}
-	p2.X = w*w*p1.X + 2*y*w*p1.Z - 2*z*w*p1.Y + x*x*p1.X + 2*y*x*p1.Y + 2*z*x*p1.Z - z*z*p1.X - y*y*p1.X
-	p2.Y = 2*x*y*p1.X + y*y*p1.Y + 2*z*y*p1.Z + 2*w*z*p1.X - z*z*p1.Y + w*w*p1.Y - 2*x*w*p1.Z - x*x*p1.Y
-	p2.Z = 2*x*z*p1.X + 2*y*z*p1.Y + z*z*p1.Z - 2*w*y*p1.X - y*y*p1.Z + 2*w*x*p1.Y - x*x*p1.Z + w*w*p1.Z
-	return p2
-	/*
-		qv := Vector3{q.X, q.Y, q.Z}
-		cross := qv.CrossProduct(v)
-		return v.Add(cross.Scale(2 * q.W)).Add(qv.Scale(2).CrossProduct(cross))
-	*/
+	return Vector3{2 * (x*z - w*y), 2 * (y*z + w*x), 1 - 2*(x*x+y*y)}
+}
+
+//Backward returns a directional vector that is represented by this quaternion
+func (q Quaternion) Backward() Vector3 {
+	x, y, z, w := q.X, q.Y, q.Z, q.W
+	return Vector3{-(2 * (x*z - w*y)), -(2 * (y*z + w*x)), -(1 - 2*(x*x+y*y))}
+}
+
+//Up returns a directional vector that is represented by this quaternion
+func (q Quaternion) Up() Vector3 {
+	x, y, z, w := q.X, q.Y, q.Z, q.W
+	return Vector3{2 * (x*y - w*z), 1 - 2*(x*x+z*z), 2 * (y*z + w*x)}
+}
+
+//Down returns a directional vector that is represented by this quaternion
+func (q Quaternion) Down() Vector3 {
+	x, y, z, w := q.X, q.Y, q.Z, q.W
+	return Vector3{-(2 * (x*y - w*z)), -(1 - 2*(x*x+z*z)), -(2 * (y*z + w*x))}
+}
+
+//Left returns a directional vector that is represented by this quaternion
+func (q Quaternion) Left() Vector3 {
+	x, y, z, w := q.X, q.Y, q.Z, q.W
+	return Vector3{1 - 2*(y*y+z*z), 2 * (x*y + w*z), -2 * (x*z - w*y)}
+}
+
+//Right returns a directional vector that is represented by this quaternion
+func (q Quaternion) Right() Vector3 {
+	x, y, z, w := q.X, q.Y, q.Z, q.W
+	return Vector3{-(1 - 2*(y*y+z*z)), -(2 * (x*y + w*z)), -(-2 * (x*z - w*y))}
 }
 
 //ToAxisAngle returns the rotation angle and axis for a given quaternion
