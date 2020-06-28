@@ -21,13 +21,6 @@ type Quaternion struct {
 //NewQuaternionIdentity creates a Quaternion Identity (a blank quaternion)
 func NewQuaternionIdentity() Quaternion { return Quaternion{X: 0, Y: 0, Z: 0, W: 1} }
 
-//newQuaternionVector3ToVector3 creates a quaternion that is the angle between 2 vectors
-func newQuaternionVector3ToVector3(from, too Vector3) Quaternion {
-	cos2theta := from.DotProduct(too)
-	cross := from.CrossProduct(too)
-	return Quaternion{X: cross.X, Y: cross.Y, Z: cross.Z, W: 1 + cos2theta}.Normalize()
-}
-
 //NewQuaternionBetweenVectors creates a rotation between the two vectors.
 func NewQuaternionBetweenVectors(start, dest Vector3) Quaternion {
 	//https://github.com/go-gl/mathgl/blob/master/mgl32/quat.go#L431
@@ -59,6 +52,11 @@ func NewQuaternionBetweenVectors(start, dest Vector3) Quaternion {
 		comps.Z,
 		s * 0.5,
 	}
+}
+
+//NewQuaternionFromAxis creates a new quaternion based of the acis
+func NewQuaternionFromAxis(xAxis, yAxis, zAxis Vector3) Quaternion {
+	return NewQuaternionMatrix(NewMatrixRotateAxis(xAxis, yAxis, zAxis))
 }
 
 //NewQuaternionAxisAngle creates a quaternion from an axis and its rotation

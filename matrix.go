@@ -39,25 +39,25 @@ type Matrix struct {
 	//8    9    10   11
 	//12   13   14   15
 
-	M0 float32
-	M1 float32
-	M2 float32
-	M3 float32
+	M0 float32 //M0 is 0,0
+	M1 float32 //M1 is 1,0
+	M2 float32 //M2 is 2,0
+	M3 float32 //M3 is 3,0
 
-	M4 float32
-	M5 float32
-	M6 float32
-	M7 float32
+	M4 float32 //M4 is 0,1
+	M5 float32 //M5 is 1,1
+	M6 float32 //M6 is 2,1
+	M7 float32 //M7 is 3,1
 
-	M8  float32
-	M9  float32
-	M10 float32
-	M11 float32
+	M8  float32 //M8 is 0,2
+	M9  float32 //M9 is 1,2
+	M10 float32 //M10 is 2,2
+	M11 float32 //M11 is 3,2
 
-	M12 float32
-	M13 float32
-	M14 float32
-	M15 float32
+	M12 float32 //M12 is 0,3
+	M13 float32 //M13 is 1,3
+	M14 float32 //M14 is 2,3
+	M15 float32 //M15 is 3,3
 }
 
 func newMatrixFromPointer(ptr unsafe.Pointer) Matrix { return *(*Matrix)(ptr) }
@@ -156,9 +156,160 @@ func NewMatrixRotate(axis Vector3, radians float32) Matrix {
 	}
 }
 
+//NewMatrixRotateXYZ new xyz-rotation matrix (in radians)
+func NewMatrixRotateXYZ(radians Vector3) Matrix {
+	cosz := float32(math.Cos(float64(-radians.Z)))
+	sinz := float32(math.Sin(float64(-radians.Z)))
+	cosy := float32(math.Cos(float64(-radians.Y)))
+	siny := float32(math.Sin(float64(-radians.Y)))
+	cosx := float32(math.Cos(float64(-radians.X)))
+	sinx := float32(math.Sin(float64(-radians.X)))
+	result := NewMatrixIdentity()
+	result.M0 = cosz * cosy
+	result.M4 = (cosz * siny * sinx) - (sinz * cosx)
+	result.M8 = (cosz * siny * cosx) + (sinz * sinx)
+	result.M1 = sinz * cosy
+	result.M5 = (sinz * siny * sinx) + (cosz * cosx)
+	result.M9 = (sinz * siny * cosx) - (cosz * sinx)
+	result.M2 = -siny
+	result.M6 = cosy * sinx
+	result.M10 = cosy * cosx
+	return result
+
+}
+
+//NewMatrixRotateX creates a new matrix that is rotated
+func NewMatrixRotateX(radians float32) Matrix {
+	result := NewMatrixIdentity()
+	cosres := float32(math.Cos(float64(radians)))
+	sinres := float32(math.Sin(float64(radians)))
+	result.M5 = cosres
+	result.M6 = -sinres
+	result.M9 = sinres
+	result.M10 = cosres
+	return result
+}
+
+//NewMatrixRotateY creates a new matrix that is rotated
+func NewMatrixRotateY(radians float32) Matrix {
+	result := NewMatrixIdentity()
+	cosres := float32(math.Cos(float64(radians)))
+	sinres := float32(math.Sin(float64(radians)))
+	result.M0 = cosres
+	result.M2 = sinres
+	result.M8 = -sinres
+	result.M10 = cosres
+	return result
+
+}
+
+//NewMatrixRotateZ creates a new matrix that is rotated
+func NewMatrixRotateZ(radians float32) Matrix {
+	result := NewMatrixIdentity()
+	cosres := float32(math.Cos(float64(radians)))
+	sinres := float32(math.Sin(float64(radians)))
+	result.M0 = cosres
+	result.M1 = -sinres
+	result.M4 = sinres
+	result.M5 = cosres
+	return result
+
+}
+
+//NewMatrixRotateAxis creates a rotation matrix from the axis
+func NewMatrixRotateAxis(xAxis, yAxis, zAxis Vector3) Matrix {
+	return Matrix{
+		M0:  xAxis.X,
+		M1:  yAxis.X,
+		M2:  zAxis.X,
+		M3:  0,
+		M4:  xAxis.Y,
+		M5:  yAxis.Y,
+		M6:  zAxis.Y,
+		M7:  0,
+		M8:  xAxis.Z,
+		M9:  yAxis.Z,
+		M10: zAxis.Z,
+		M11: 0,
+		M12: 0,
+		M13: 0,
+		M14: 0,
+		M15: 1,
+	}
+}
+
+//NewMatrixScale creates a new scalling matrix
+func NewMatrixScale(scale Vector3) Matrix {
+	return Matrix{
+		M0: float32(scale.X), M1: 0, M2: 0, M3: 0,
+		M4: 0, M5: float32(scale.Y), M6: 0, M7: 0,
+		M8: 0, M9: 0, M10: float32(scale.Z), M11: 0,
+		M12: 0, M13: 0, M14: 0, M15: 1,
+	}
+}
+
+//NewMatrixPerspective creates a perspective projection matrix. FOVY is in degrees
+func NewMatrixPerspective(fovy, aspect, near, far float32) Matrix {
+	fovy = fovy * Deg2Rad
+	nmf, f := near-far, float32(1./math.Tan(float64(fovy)/2.0))
+	return Matrix{float32(f / aspect), 0, 0, 0, 0, float32(f), 0, 0, 0, 0, float32((near + far) / nmf), -1, 0, 0, float32((2. * far * near) / nmf), 0}
+}
+
+//NewMatrixOrtho creates a orthographic projection
+func NewMatrixOrtho(left, right, bottom, top, near, far float32) Matrix {
+	rml, tmb, fmn := (right - left), (top - bottom), (far - near)
+	return Matrix{float32(2. / rml), 0, 0, 0, 0, float32(2. / tmb), 0, 0, 0, 0, float32(-2. / fmn), 0, float32(-(right + left) / rml), float32(-(top + bottom) / tmb), float32(-(far + near) / fmn), 1}
+}
+
+// NewMatrixFrustum generates a Frustum Matrix.
+func NewMatrixFrustum(left, right, bottom, top, near, far float32) Matrix {
+	rml, tmb, fmn := (right - left), (top - bottom), (far - near)
+	A, B, C, D := (right+left)/rml, (top+bottom)/tmb, -(far+near)/fmn, -(2*far*near)/fmn
+
+	return Matrix{float32((2. * near) / rml), 0, 0, 0, 0, float32((2. * near) / tmb), 0, 0, float32(A), float32(B), float32(C), -1, 0, 0, float32(D), 0}
+}
+
+//NewMatrixLookAt creates a matrix to look at a target
+func NewMatrixLookAt(eye, target, up Vector3) Matrix {
+	f := target.Subtract(eye).Normalize()
+	s := f.CrossProduct(up.Normalize()).Normalize()
+	u := s.CrossProduct(f)
+	matrix := Matrix{
+		M0: float32(s.X),
+		M1: float32(u.X),
+		M2: float32(-f.X),
+		M3: 0,
+
+		M4: float32(s.Y),
+		M5: float32(u.Y),
+		M6: float32(-f.Y),
+		M7: 0,
+
+		M8:  float32(s.Z),
+		M9:  float32(u.Z),
+		M10: float32(-f.Z),
+		M11: 0,
+
+		M12: 0,
+		M13: 0,
+		M14: 0,
+		M15: 1,
+	}
+
+	//	return M.Mul4(Translate3D(float32(-eye[0]), float32(-eye[1]), float32(-eye[2])))
+	return matrix.Multiply(NewMatrixTranslate32(-eye.X, -eye.Y, -eye.Z))
+}
+
+/*
 //NewMatrixTransform creates a new matrix based off a transform
 func NewMatrixTransform(transform Transform) Matrix {
 	return NewMatrixTranslate(transform.Position).Multiply(NewMatrixQuaternion(transform.Rotation)).Multiply(NewMatrixScale(transform.Scale))
+}
+*/
+
+//GetTranslation gets the matrix translation
+func (m Matrix) GetTranslation() Vector3 {
+	return Vector3{m.M12, m.M13, m.M14}
 }
 
 //Trace of the matrix (sum of values along diagonal)
@@ -337,76 +488,6 @@ func (m Matrix) Subtract(right Matrix) Matrix {
 	}
 }
 
-//NewMatrixRotateXYZ new xyz-rotation matrix (in radians)
-func NewMatrixRotateXYZ(radians Vector3) Matrix {
-	cosz := float32(math.Cos(float64(-radians.Z)))
-	sinz := float32(math.Sin(float64(-radians.Z)))
-	cosy := float32(math.Cos(float64(-radians.Y)))
-	siny := float32(math.Sin(float64(-radians.Y)))
-	cosx := float32(math.Cos(float64(-radians.X)))
-	sinx := float32(math.Sin(float64(-radians.X)))
-	result := NewMatrixIdentity()
-	result.M0 = cosz * cosy
-	result.M4 = (cosz * siny * sinx) - (sinz * cosx)
-	result.M8 = (cosz * siny * cosx) + (sinz * sinx)
-	result.M1 = sinz * cosy
-	result.M5 = (sinz * siny * sinx) + (cosz * cosx)
-	result.M9 = (sinz * siny * cosx) - (cosz * sinx)
-	result.M2 = -siny
-	result.M6 = cosy * sinx
-	result.M10 = cosy * cosx
-	return result
-
-}
-
-//NewMatrixRotateX creates a new matrix that is rotated
-func NewMatrixRotateX(radians float32) Matrix {
-	result := NewMatrixIdentity()
-	cosres := float32(math.Cos(float64(radians)))
-	sinres := float32(math.Sin(float64(radians)))
-	result.M5 = cosres
-	result.M6 = -sinres
-	result.M9 = sinres
-	result.M10 = cosres
-	return result
-}
-
-//NewMatrixRotateY creates a new matrix that is rotated
-func NewMatrixRotateY(radians float32) Matrix {
-	result := NewMatrixIdentity()
-	cosres := float32(math.Cos(float64(radians)))
-	sinres := float32(math.Sin(float64(radians)))
-	result.M0 = cosres
-	result.M2 = sinres
-	result.M8 = -sinres
-	result.M10 = cosres
-	return result
-
-}
-
-//NewMatrixRotateZ creates a new matrix that is rotated
-func NewMatrixRotateZ(radians float32) Matrix {
-	result := NewMatrixIdentity()
-	cosres := float32(math.Cos(float64(radians)))
-	sinres := float32(math.Sin(float64(radians)))
-	result.M0 = cosres
-	result.M1 = -sinres
-	result.M4 = sinres
-	result.M5 = cosres
-	return result
-
-}
-
-//NewMatrixScale creates a new scalling matrix
-func NewMatrixScale(scale Vector3) Matrix {
-	return Matrix{
-		M0: float32(scale.X), M1: 0, M2: 0, M3: 0,
-		M4: 0, M5: float32(scale.Y), M6: 0, M7: 0,
-		M8: 0, M9: 0, M10: float32(scale.Z), M11: 0,
-		M12: 0, M13: 0, M14: 0, M15: 1,
-	}
-}
-
 //Multiply two matrix together. Note that order matters.
 func (m Matrix) Multiply(right Matrix) Matrix {
 	m1 := m.DecomposePointer()
@@ -429,58 +510,6 @@ func (m Matrix) Multiply(right Matrix) Matrix {
 		m1[2]*m2[12] + m1[6]*m2[13] + m1[10]*m2[14] + m1[14]*m2[15],
 		m1[3]*m2[12] + m1[7]*m2[13] + m1[11]*m2[14] + m1[15]*m2[15],
 	}
-}
-
-//NewMatrixPerspective creates a perspective projection matrix. FOVY is in degrees
-func NewMatrixPerspective(fovy, aspect, near, far float32) Matrix {
-	fovy = fovy * Deg2Rad
-	nmf, f := near-far, float32(1./math.Tan(float64(fovy)/2.0))
-	return Matrix{float32(f / aspect), 0, 0, 0, 0, float32(f), 0, 0, 0, 0, float32((near + far) / nmf), -1, 0, 0, float32((2. * far * near) / nmf), 0}
-}
-
-//NewMatrixOrtho creates a orthographic projection
-func NewMatrixOrtho(left, right, bottom, top, near, far float32) Matrix {
-	rml, tmb, fmn := (right - left), (top - bottom), (far - near)
-	return Matrix{float32(2. / rml), 0, 0, 0, 0, float32(2. / tmb), 0, 0, 0, 0, float32(-2. / fmn), 0, float32(-(right + left) / rml), float32(-(top + bottom) / tmb), float32(-(far + near) / fmn), 1}
-}
-
-// NewMatrixFrustum generates a Frustum Matrix.
-func NewMatrixFrustum(left, right, bottom, top, near, far float32) Matrix {
-	rml, tmb, fmn := (right - left), (top - bottom), (far - near)
-	A, B, C, D := (right+left)/rml, (top+bottom)/tmb, -(far+near)/fmn, -(2*far*near)/fmn
-
-	return Matrix{float32((2. * near) / rml), 0, 0, 0, 0, float32((2. * near) / tmb), 0, 0, float32(A), float32(B), float32(C), -1, 0, 0, float32(D), 0}
-}
-
-//NewMatrixLookAt creates a matrix to look at a target
-func NewMatrixLookAt(eye, target, up Vector3) Matrix {
-	f := target.Subtract(eye).Normalize()
-	s := f.CrossProduct(up.Normalize()).Normalize()
-	u := s.CrossProduct(f)
-	matrix := Matrix{
-		M0: float32(s.X),
-		M1: float32(u.X),
-		M2: float32(-f.X),
-		M3: 0,
-
-		M4: float32(s.Y),
-		M5: float32(u.Y),
-		M6: float32(-f.Y),
-		M7: 0,
-
-		M8:  float32(s.Z),
-		M9:  float32(u.Z),
-		M10: float32(-f.Z),
-		M11: 0,
-
-		M12: 0,
-		M13: 0,
-		M14: 0,
-		M15: 1,
-	}
-
-	//	return M.Mul4(Translate3D(float32(-eye[0]), float32(-eye[1]), float32(-eye[2])))
-	return matrix.Multiply(NewMatrixTranslate32(-eye.X, -eye.Y, -eye.Z))
 }
 
 //Decompose turns a matrix into an slice of floats
