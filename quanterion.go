@@ -157,6 +157,16 @@ func (q Quaternion) Inverse() Quaternion {
 	return q
 }
 
+//Conjugate stuff
+func (q Quaternion) Conjugate() Quaternion {
+	return Quaternion{
+		X: q.X * -1,
+		Y: q.Y * -1,
+		Z: q.Z * -1,
+		W: q.W * 1,
+	}
+}
+
 //Decompose the quaternion into a slice of floats
 func (q Quaternion) Decompose() []float32 { return []float32{q.X, q.Y, q.Z, q.W} }
 
@@ -247,16 +257,12 @@ func (q Quaternion) Slerp(q2 Quaternion, amount float32) Quaternion {
 
 // Rotate a vector by the rotation this quaternion represents.
 func (q Quaternion) Rotate(v Vector3) Vector3 {
-	//x, y, z, w := q.X, q.Y, q.Z, q.W
-	//p2 := Vector3{}
-	//p2.X = w*w*p1.X + 2*y*w*p1.Z - 2*z*w*p1.Y + x*x*p1.X + 2*y*x*p1.Y + 2*z*x*p1.Z - z*z*p1.X - y*y*p1.X
-	//p2.Y = 2*x*y*p1.X + y*y*p1.Y + 2*z*y*p1.Z + 2*w*z*p1.X - z*z*p1.Y + w*w*p1.Y - 2*x*w*p1.Z - x*x*p1.Y
-	//p2.Z = 2*x*z*p1.X + 2*y*z*p1.Y + z*z*p1.Z - 2*w*y*p1.X - y*y*p1.Z + 2*w*x*p1.Y - x*x*p1.Z + w*w*p1.Z
-	//return p2
+	result := Vector3{}
 
-	qv := Vector3{q.X, q.Y, q.Z}
-	cross := qv.CrossProduct(v)
-	return v.Add(cross.Scale(2 * q.W)).Add(qv.Scale(2).CrossProduct(cross))
+	result.X = v.X*(q.X*q.X+q.W*q.W-q.Y*q.Y-q.Z*q.Z) + v.Y*(2*q.X*q.Y-2*q.W*q.Z) + v.Z*(2*q.X*q.Z+2*q.W*q.Y)
+	result.Y = v.X*(2*q.W*q.Z+2*q.X*q.Y) + v.Y*(q.W*q.W-q.X*q.X+q.Y*q.Y-q.Z*q.Z) + v.Z*(-2*q.W*q.X+2*q.Y*q.Z)
+	result.Z = v.X*(-2*q.W*q.Y+2*q.X*q.Z) + v.Y*(2*q.W*q.X+2*q.Y*q.Z) + v.Z*(q.W*q.W-q.X*q.X-q.Y*q.Y+q.Z*q.Z)
+	return result
 }
 
 //Forward returns a directional vector that is represented by this quaternion

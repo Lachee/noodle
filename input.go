@@ -123,8 +123,11 @@ const (
 
 //InputHandler handles the different states of the input
 type InputHandler struct {
-	mouseX                   int     //mouseX position
-	mouseY                   int     //mouseY position
+	mouseDelta         Vector2 //mouseDelta is the movement since last frame
+	mouseDeltaPrevious Vector2 //mouseDeltaPrevious is the delta before the frame
+	mouseX             int     //mouseX position
+	mouseY             int     //mouseY position
+
 	mouseScrollDeltaPrevious float32 //mouseScrollDeltaPrevious is the scroll before the frame
 	mouseScrollDelta         float32 //mouseScrollDelta is the scroll after the frame
 
@@ -142,6 +145,7 @@ func newInput() *InputHandler {
 
 /// Stores the mouse position
 func (i *InputHandler) setMousePosition(x, y int) {
+	i.mouseDeltaPrevious = Vector2{float32(x - i.mouseX), float32(y - i.mouseY)}
 	i.mouseX = x
 	i.mouseY = y
 }
@@ -173,6 +177,9 @@ func (i *InputHandler) update() {
 	//Update the scroll
 	i.mouseScrollDelta = i.mouseScrollDeltaPrevious
 	i.mouseScrollDeltaPrevious = 0
+
+	i.mouseDelta = i.mouseDeltaPrevious
+	i.mouseDeltaPrevious = Vector2{0, 0}
 
 	//Handle mouse inputs
 	for index, state := range i.buttonStates {
@@ -221,6 +228,11 @@ func (i *InputHandler) GetMouseY() int { return i.mouseY }
 //GetMousePosition gets the current mouse position
 func (i *InputHandler) GetMousePosition() Vector2 {
 	return NewVector2(float32(i.mouseX), float32(i.mouseY))
+}
+
+//GetMouseDelta gets the mouse movement
+func (i *InputHandler) GetMouseDelta() Vector2 {
+	return i.mouseDelta
 }
 
 //GetMouseScroll gets the current mouse scroll delta

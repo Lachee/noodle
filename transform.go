@@ -28,6 +28,10 @@ type Transform struct {
 //NewTransform creates a new blank transform
 func NewTransform() *Transform {
 	t := &Transform{}
+	t.localPosition = Vector3{}
+	t.localScale = Vector3{1, 1, 1}
+	t.localRotation = NewQuaternionIdentity()
+	t.needWorldUpdate = true
 	t.children = make([]*Transform, 1)
 	t.SetParent(nil)
 	return t
@@ -166,6 +170,7 @@ func (t *Transform) updateWorld(includeChildren bool) {
 
 //requireWorldUpdate tells the transform and its children that a update is required on the world axis.
 func (t *Transform) requireWorldUpdate() {
+
 	//If its already set, ignore
 	if t.needWorldUpdate {
 		return
@@ -176,6 +181,8 @@ func (t *Transform) requireWorldUpdate() {
 
 	//Update the children
 	for _, child := range t.children {
-		child.requireWorldUpdate()
+		if child != nil {
+			child.requireWorldUpdate()
+		}
 	}
 }
