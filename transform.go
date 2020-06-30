@@ -54,7 +54,7 @@ func (t *Transform) GetPosition() Vector3 {
 	if t.needWorldUpdate {
 		t.updateWorld(false)
 	}
-	return t.worldMatrix.GetTranslation()
+	return t.worldMatrix.Translation()
 }
 
 //GetWorldMatrix gets teh current world matrix
@@ -67,7 +67,7 @@ func (t *Transform) GetWorldMatrix() Matrix {
 
 //GetLocalMatrix returns a local matrix
 func (t *Transform) GetLocalMatrix() Matrix {
-	return NewMatrixTranslate(t.localPosition).Multiply(NewMatrixQuaternion(t.localRotation)).Multiply(NewMatrixScale(t.localScale))
+	return NewMatrixTranslate(t.localPosition).Multiply(NewMatrixRotation(t.localRotation)).Multiply(NewMatrixScale(t.localScale))
 }
 
 //SetParent sets the transform parent.
@@ -127,22 +127,23 @@ func (t *Transform) Rotate(q Quaternion) {
 	t.requireWorldUpdate()
 }
 
-//LookAt tells the transform to look at a thing
-func (t *Transform) LookAt(v, up Vector3) {
-	v2 := v.Subtract(t.GetPosition())
-	if v2.SqrLength() > 0 {
-		// first build rotation matrix
-		zaxis := v2.Normalize().Negate()
-		xaxis := zaxis.CrossProduct(up).Normalize().Negate()
-		yaxis := zaxis.CrossProduct(xaxis)
-		t.localRotation = NewQuaternionFromAxis(xaxis, yaxis, zaxis)
-		t.requireWorldUpdate()
-	}
-}
+////LookAt tells the transform to look at a thing
+//func (t *Transform) LookAt(v, up Vector3) {
+//	v2 := v.Subtract(t.GetPosition())
+//	if v2.SqrLength() > 0 {
+//		// first build rotation matrix
+//		zaxis := v2.Normalize().Negate()
+//		xaxis := zaxis.CrossProduct(up).Normalize().Negate()
+//		yaxis := zaxis.CrossProduct(xaxis)
+//		t.localRotation = NewQuaternionAxis(xaxis, yaxis, zaxis)
+//		t.requireWorldUpdate()
+//	}
+//}
 
 // Utilities
 
-func (t *Transform) TransformPoint(p Vector3) Vector3 { return p }
+//TransformPoint converts the point from local to world space.
+func (t *Transform) TransformPoint(p Vector3) Vector3 { return t.GetWorldMatrix().MultiplyVector3(p) }
 
 func (t *Transform) addChild(child *Transform)    {}
 func (t *Transform) removeChild(child *Transform) {}

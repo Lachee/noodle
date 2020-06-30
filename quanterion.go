@@ -39,6 +39,62 @@ func NewQuaternionEuler(theta Vector3) Quaternion {
 	return q
 }
 
+// NewQuaternionAxis creates an angle from an axis and an angle relative to that axis.
+func NewQuaternionAxis(angle float32, axis Vector3) Quaternion {
+	// angle = (float32(math.Pi) * angle) / 180.0
+
+	c, s := float32(math.Cos(float64(angle/2))), float32(math.Sin(float64(angle/2)))
+	v := axis.Scale(s)
+	return Quaternion{v.X, v.Y, v.Z, c}
+}
+
+// NewQuaternionAngle calculates the rotation between two vectors
+func NewQuaternionAngle(start, dest Vector3) Quaternion {
+	const epsilon = float32(0.001)
+
+	// http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-17-quaternions/#I_need_an_equivalent_of_gluLookAt__How_do_I_orient_an_object_towards_a_point__
+	// https://github.com/g-truc/glm/blob/0.9.5/glm/gtx/quaternion.inl#L225
+	// https://bitbucket.org/sinbad/ogre/src/d2ef494c4a2f5d6e2f0f17d3bfb9fd936d5423bb/OgreMain/include/OgreVector3.h?at=default#cl-654
+
+	start = start.Normalize()
+	dest = dest.Normalize()
+
+	cosTheta := start.DotProduct(dest)
+	if cosTheta < -1.0+epsilon {
+		// special case when vectors in opposite directions:
+		// there is no "ideal" rotation axis
+		// So guess one; any will do as long as it's perpendicular to start
+		axis := Vector3{1, 0, 0}.CrossProduct(start)
+		if axis.DotProduct(axis) < epsilon {
+			// bad luck, they were parallel, try again!
+			axis = Vector3{0, 1, 0}.CrossProduct(start)
+		}
+
+		return NewQuaternionAxis(math.Pi, axis.Normalize())
+	}
+
+	axis := start.CrossProduct(dest)
+	s := float32(math.Sqrt(float64(1.0+cosTheta) * 2.0))
+	v := axis.Scale(1.0 / s)
+	return Quaternion{v.X, v.Y, v.Z, s * 0.5}
+}
+
+//NewQuaternionLookAt creates a rotation from the eye vector to the center vector.
+func NewQuaternionLookAt(eye, center, up Vector3) Quaternion {
+	direction := center.Subtract(eye).Normalize()
+	rotDir := NewQuaternionAngle(Vector3{0, 0, 1}, direction)
+
+	//Force the up
+	right := direction.CrossProduct(up)
+	up = right.CrossProduct(direction)
+
+	upCur := rotDir.Rotate(Vector3{0, 1, 0})
+	rotUp := NewQuaternionAngle(upCur, up)
+
+	rotTarget := rotUp.Multiply(rotDir)
+	return rotTarget.Invert()
+}
+
 //Add two quaternions (q1 + q2)
 func (q Quaternion) Add(q2 Quaternion) Quaternion {
 	return Quaternion{X: q.X + q2.X, Y: q.Y + q2.Y, Z: q.Z + q2.Z, W: q.W + q2.W}

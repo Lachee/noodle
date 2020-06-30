@@ -7,38 +7,6 @@ import (
 
 //Matrix A representation of a 4 x 4 matrix
 type Matrix struct {
-	//0   4   8   12
-	//1   5   9   13
-	//2   6   10  14
-	//3   7   11  15
-	//0 4 8 12    1 5 9 13    2 6 10 14    3 7 11 15
-	/*
-		M0  float32
-		M4  float32
-		M8  float32
-		M12 float32
-
-		M1  float32
-		M5  float32
-		M9  float32
-		M13 float32
-
-		M2  float32
-		M6  float32
-		M10 float32
-		M14 float32
-
-		M3  float32
-		M7  float32
-		M11 float32
-		M15 float32
-	*/
-
-	//0    1    2    3
-	//4    5    6    7
-	//8    9    10   11
-	//12   13   14   15
-
 	M00, M10, M20, M30 float32
 	M01, M11, M21, M31 float32
 	M02, M12, M22, M32 float32
@@ -53,10 +21,10 @@ func NewMatrix() Matrix {
 //NewMatrixTranslate creates a new translate matrix
 func NewMatrixTranslate(v Vector3) Matrix {
 	return Matrix{
-		1, 0, 0, v.X,
-		0, 1, 0, v.Y,
-		0, 0, 1, v.Z,
-		0, 0, 0, 1,
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		v.X, v.Y, v.Z, 1,
 	}
 }
 
@@ -116,10 +84,17 @@ func NewMatrixRotation(q Quaternion) Matrix {
 }
 
 //NewMatrixPerspective creates a perspective projection matrix. FOVY is in degrees
-func NewMatrixPerspective(fovy, aspect, near, far float32) Matrix {
-	fovy = fovy * Deg2Rad
-	nmf, f := near-far, float32(1./math.Tan(float64(fovy)/2.0))
-	return Matrix{float32(f / aspect), 0, 0, 0, 0, float32(f), 0, 0, 0, 0, float32((near + far) / nmf), -1, 0, 0, float32((2. * far * near) / nmf), 0}
+func NewMatrixPerspective(fovy, aspectRatio, near, far float32) Matrix {
+	fieldOfViewInRadians := float64(fovy) * (math.Pi / 180.0)
+	f := float32(1.0 / math.Tan(fieldOfViewInRadians/2.0))
+	rangeInv := 1.0 / (near - far)
+
+	return Matrix{
+		f / aspectRatio, 0, 0, 0,
+		0, f, 0, 0,
+		0, 0, (near + far) * rangeInv, -1,
+		0, 0, near * far * rangeInv * 2, 0,
+	}
 }
 
 //NewMatrixOrtho creates a orthographic projection
@@ -133,7 +108,46 @@ func NewMatrixFrustum(left, right, bottom, top, near, far float32) Matrix {
 	rml, tmb, fmn := (right - left), (top - bottom), (far - near)
 	A, B, C, D := (right+left)/rml, (top+bottom)/tmb, -(far+near)/fmn, -(2*far*near)/fmn
 
-	return Matrix{float32((2. * near) / rml), 0, 0, 0, 0, float32((2. * near) / tmb), 0, 0, float32(A), float32(B), float32(C), -1, 0, 0, float32(D), 0}
+	var r Matrix
+	r.M00 = float32((2. * near) / rml)
+	r.M11 = float32((2. * near) / tmb)
+	r.M20 = A
+	r.M21 = B
+	r.M22 = C
+	r.M23 = -1
+	r.M32 = D
+	return r
+}
+
+//NewMatrixLookAt creates a matrix to look at a target
+func NewMatrixLookAt(eye, target, up Vector3) Matrix {
+	f := target.Subtract(eye).Normalize()
+	s := f.CrossProduct(up.Normalize()).Normalize()
+	u := s.CrossProduct(f)
+	matrix := Matrix{
+		M00: float32(s.X),
+		M10: float32(u.X),
+		M20: float32(-f.X),
+		M30: 0,
+
+		M01: float32(s.Y),
+		M11: float32(u.Y),
+		M21: float32(-f.Y),
+		M31: 0,
+
+		M02: float32(s.Z),
+		M12: float32(u.Z),
+		M22: float32(-f.Z),
+		M32: 0,
+
+		M03: 0,
+		M13: 0,
+		M23: 0,
+		M33: 1,
+	}
+
+	//	return M.Mul4(Translate3D(float32(-eye[0]), float32(-eye[1]), float32(-eye[2])))
+	return matrix.Multiply(NewMatrixTranslate(Vector3{-eye.X, -eye.Y, -eye.Z}))
 }
 
 //Trace of the matrix (sum of values along diagonal)
@@ -208,6 +222,11 @@ func (m Matrix) MultiplyVector4(v Vector4) Vector4 {
 	return r
 }
 
+//Translation gets the translation component
+func (m Matrix) Translation() Vector3 {
+	return Vector3{m.M03, m.M13, m.M23}
+}
+
 //Decompose turns a matrix into an slice of floats
 func (m Matrix) Decompose() []float32 {
 	return []float32{m.M00, m.M10, m.M20, m.M30, m.M01, m.M11, m.M21, m.M31, m.M02, m.M12, m.M22, m.M32, m.M03, m.M13, m.M23, m.M33}
@@ -217,37 +236,3 @@ func (m Matrix) Decompose() []float32 {
 func (m *Matrix) DecomposePointer() *[16]float32 {
 	return (*[16]float32)(unsafe.Pointer(m))
 }
-
-/*
-//NewMatrixLookAt creates a matrix to look at a target
-func NewMatrixLookAt(eye, target, up Vector3) Matrix {
-	f := target.Subtract(eye).Normalize()
-	s := f.CrossProduct(up.Normalize()).Normalize()
-	u := s.CrossProduct(f)
-	matrix := Matrix{
-		M0: float32(s.X),
-		M1: float32(u.X),
-		M2: float32(-f.X),
-		M3: 0,
-
-		M4: float32(s.Y),
-		M5: float32(u.Y),
-		M6: float32(-f.Y),
-		M7: 0,
-
-		M8:  float32(s.Z),
-		M9:  float32(u.Z),
-		M10: float32(-f.Z),
-		M11: 0,
-
-		M12: 0,
-		M13: 0,
-		M14: 0,
-		M15: 1,
-	}
-
-	//	return M.Mul4(Translate3D(float32(-eye[0]), float32(-eye[1]), float32(-eye[2])))
-	return matrix.Multiply(NewMatrixTranslate32(-eye.X, -eye.Y, -eye.Z))
-}
-
-*/

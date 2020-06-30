@@ -349,15 +349,6 @@ func (v *Vector3) OrthoNormalize(v2 *Vector3) {
 	v2.Z = tmp.Z
 }
 
-//Transform a vector by a given matrix
-func (v Vector3) Transform(m Matrix) Vector3 {
-	return Vector3{
-		X: m.M0*v.X + m.M4*v.Y + m.M8*v.Z + m.M12,
-		Y: m.M1*v.X + m.M5*v.Y + m.M9*v.Z + m.M13,
-		Z: m.M2*v.X + m.M6*v.Y + m.M10*v.Z + m.M14,
-	}
-}
-
 //Min value for each pair of components
 func (v Vector3) Min(v2 Vector3) Vector3 {
 	return Vector3{
