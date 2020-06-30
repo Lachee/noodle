@@ -7,10 +7,25 @@ import (
 
 //Matrix A representation of a 4 x 4 matrix
 type Matrix struct {
-	M00, M10, M20, M30 float32
-	M01, M11, M21, M31 float32
-	M02, M12, M22, M32 float32
-	M03, M13, M23, M33 float32
+	M00 float32
+	M10 float32
+	M20 float32
+	M30 float32
+
+	M01 float32
+	M11 float32
+	M21 float32
+	M31 float32
+
+	M02 float32
+	M12 float32
+	M22 float32
+	M32 float32
+
+	M03 float32
+	M13 float32
+	M23 float32
+	M33 float32
 }
 
 //NewMatrix creates a identity
@@ -20,12 +35,15 @@ func NewMatrix() Matrix {
 
 //NewMatrixTranslate creates a new translate matrix
 func NewMatrixTranslate(v Vector3) Matrix {
-	return Matrix{
-		1, 0, 0, 0,
-		0, 1, 0, 0,
-		0, 0, 1, 0,
-		v.X, v.Y, v.Z, 1,
-	}
+	var r Matrix
+	r.M00 = 1
+	r.M11 = 1
+	r.M22 = 1
+	r.M33 = 1
+	r.M30 = v.X
+	r.M31 = v.Y
+	r.M32 = v.Z
+	return r
 }
 
 //NewMatrixScale creates a new scale matrix
