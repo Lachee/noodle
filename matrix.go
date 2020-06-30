@@ -53,9 +53,9 @@ func NewMatrix() Matrix {
 //NewMatrixTranslate creates a new translate matrix
 func NewMatrixTranslate(v Vector3) Matrix {
 	return Matrix{
-		1, 0, 0, v.X, 
-		0, 1, 0, v.Y, 
-		0, 0, 1, v.Z, 
+		1, 0, 0, v.X,
+		0, 1, 0, v.Y,
+		0, 0, 1, v.Z,
 		0, 0, 0, 1,
 	}
 }
@@ -201,10 +201,10 @@ func (m Matrix) MultiplyVector3(v Vector3) Vector3 {
 func (m Matrix) MultiplyVector4(v Vector4) Vector4 {
 	var r Vector4
 
-	r.X = m.M00 * v.X + m.M01 * v.Y + m.M02 * v.Z + m.M03 * v.W, 
-	r.Y = m.M10 * v.X + m.M11 * v.Y + m.M12 * v.Z + m.M13 * v.W,
-	r.Z = m.M20 * v.X + m.M21 * v.Y + m.M22 * v.Z + m.M23 * v.W,
-	r.W = m.M30 * v.X + m.M31 * v.Y + m.M32 * v.Z + m.M33 * v.W
+	r.X = m.M00*v.X + m.M01*v.Y + m.M02*v.Z + m.M03*v.W
+	r.Y = m.M10*v.X + m.M11*v.Y + m.M12*v.Z + m.M13*v.W
+	r.Z = m.M20*v.X + m.M21*v.Y + m.M22*v.Z + m.M23*v.W
+	r.W = m.M30*v.X + m.M31*v.Y + m.M32*v.Z + m.M33*v.W
 	return r
 }
 

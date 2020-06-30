@@ -1,6 +1,10 @@
 package noodle
 
-import "math"
+import (
+	"log"
+	"math"
+	"unsafe"
+)
 
 /*
 Copyright (c) 2020 Lachee
@@ -11,346 +15,106 @@ Copyright ©2013 The go-gl Authors. All rights reserved.
 //https://github.com/go-gl/mathgl/blob/master/mgl32/quat.go
 
 //Quaternion A represntation of rotations that does not suffer from gimbal lock
-type Quaternion struct {
-	X float32
-	Y float32
-	Z float32
-	W float32
-}
+type Quaternion Vector4
 
 //NewQuaternionIdentity creates a Quaternion Identity (a blank quaternion)
 func NewQuaternionIdentity() Quaternion { return Quaternion{X: 0, Y: 0, Z: 0, W: 1} }
 
-//NewQuaternionBetweenVectors creates a rotation between the two vectors.
-func NewQuaternionBetweenVectors(start, dest Vector3) Quaternion {
-	//https://github.com/go-gl/mathgl/blob/master/mgl32/quat.go#L431
-	start = start.Normalize()
-	dest = dest.Normalize()
-	epsilon := float32(0.001)
-	cosTheta := start.DotProduct(dest)
+//NewQuaternionEuler creates a quaternion from Euler Angles
+func NewQuaternionEuler(theta Vector3) Quaternion {
+	var q Quaternion
+	cosz2 := float32(math.Cos(0.5 * float64(theta.Z)))
+	cosy2 := float32(math.Cos(0.5 * float64(theta.Y)))
+	cosx2 := float32(math.Cos(0.5 * float64(theta.X)))
 
-	if cosTheta < -1.0+epsilon {
-		// special case when vectors in opposite directions:
-		// there is no "ideal" rotation axis
-		// So guess one; any will do as long as it's perpendicular to start
-		axis := Vector3{1, 0, 0}.CrossProduct(start)
-		if axis.DotProduct(axis) < epsilon {
-			// bad luck, they were parallel, try again!
-			axis = Vector3{0, 1, 0}.CrossProduct(start)
-		}
+	sinz2 := float32(math.Sin(0.5 * float64(theta.Z)))
+	siny2 := float32(math.Sin(0.5 * float64(theta.Y)))
+	sinx2 := float32(math.Sin(0.5 * float64(theta.X)))
 
-		return NewQuaternionAxisAngle(axis.Normalize(), PI)
-	}
-
-	axis := start.CrossProduct(dest)
-	s := float32(math.Sqrt(float64(1.0+cosTheta) * 2.0))
-
-	comps := axis.Scale(1.0 / s)
-	return Quaternion{
-		comps.X,
-		comps.Y,
-		comps.Z,
-		s * 0.5,
-	}
-}
-
-//NewQuaternionFromAxis creates a new quaternion based of the acis
-func NewQuaternionFromAxis(xAxis, yAxis, zAxis Vector3) Quaternion {
-	return NewQuaternionMatrix(NewMatrixRotateAxis(xAxis, yAxis, zAxis))
-}
-
-//NewQuaternionAxisAngle creates a quaternion from an axis and its rotation
-func NewQuaternionAxisAngle(axis Vector3, angle float32) Quaternion {
-
-	//If the axis isn't 0, we will just extream it a bit.
-	//if axis.Length() != 0 {
-	//	angle *= 0.5
-	//}
-
-	axis = axis.Normalize()
-	cosres := float32(math.Cos(float64(angle)))
-	sinres := float32(math.Sin(float64(angle)))
-	return Quaternion{X: axis.X * sinres, Y: axis.Y * sinres, Z: axis.Z * sinres, W: cosres}.Normalize()
-}
-
-//NewQuaternionEuler creates a quaternion from euler angles (roll, yaw, pitch) in radians
-func NewQuaternionEuler(euler Vector3) Quaternion {
-	x0 := float32(math.Cos(float64(euler.X * 0.5)))
-	x1 := float32(math.Sin(float64(euler.X * 0.5)))
-	y0 := float32(math.Cos(float64(euler.Y * 0.5)))
-	y1 := float32(math.Sin(float64(euler.Y * 0.5)))
-	z0 := float32(math.Cos(float64(euler.Z * 0.5)))
-	z1 := float32(math.Sin(float64(euler.Z * 0.5)))
-	return Quaternion{
-		X: x1*y0*z0 - x0*y1*z1,
-		Y: x0*y1*z0 + x1*y0*z1,
-		Z: x0*y0*z1 - x1*y1*z0,
-		W: x0*y0*z0 + x1*y1*z1,
-	}
-}
-
-// NewQuaternionMatrix converts a pure rotation matrix into a quaternion
-func NewQuaternionMatrix(matrix Matrix) Quaternion {
-	m := matrix.DecomposePointer()
-
-	// http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/index.htm
-
-	if tr := m[0] + m[5] + m[10]; tr > 0 {
-		s := float32(0.5 / math.Sqrt(float64(tr+1.0)))
-		return Quaternion{
-			(m[6] - m[9]) * s,
-			(m[8] - m[2]) * s,
-			(m[1] - m[4]) * s,
-			0.25 / s,
-		}
-	}
-
-	if (m[0] > m[5]) && (m[0] > m[10]) {
-		s := float32(2.0 * math.Sqrt(float64(1.0+m[0]-m[5]-m[10])))
-		return Quaternion{
-			0.25 * s,
-			(m[4] + m[1]) / s,
-			(m[8] + m[2]) / s,
-			(m[6] - m[9]) / s,
-		}
-	}
-
-	if m[5] > m[10] {
-		s := float32(2.0 * math.Sqrt(float64(1.0+m[5]-m[0]-m[10])))
-		return Quaternion{
-			(m[4] + m[1]) / s,
-			0.25 * s,
-			(m[9] + m[6]) / s,
-			(m[8] - m[2]) / s,
-		}
-
-	}
-
-	s := float32(2.0 * math.Sqrt(float64(1.0+m[10]-m[0]-m[5])))
-	return Quaternion{
-		(m[8] + m[2]) / s,
-		(m[9] + m[6]) / s,
-		0.25 * s,
-		(m[1] - m[4]) / s,
-	}
-}
-
-//NewQuaternionLookAt creates a rotation from the eye to the center, with the give up.
-func NewQuaternionLookAt(eye, center, up Vector3) Quaternion {
-
-	matrix := NewMatrixLookAt(eye, center, up)
-	return NewQuaternionMatrix(matrix)
-}
-
-//Inverse the quaternion
-func (q Quaternion) Inverse() Quaternion {
-	length := q.SqrLength()
-	if length != 0 {
-		i := 1 / length
-		return Quaternion{
-			X: q.X * -i,
-			Y: q.Y * -i,
-			Z: q.Z * -i,
-			W: q.W * i,
-		}
-	}
+	// and now compute Quaternion
+	q.W = cosz2*cosy2*cosx2 + sinz2*siny2*sinx2
+	q.X = cosz2*cosy2*sinx2 - sinz2*siny2*cosx2
+	q.Y = cosz2*siny2*cosx2 + sinz2*cosy2*sinx2
+	q.Z = sinz2*cosy2*cosx2 - cosz2*siny2*sinx2
 	return q
 }
 
-//Conjugate stuff
-func (q Quaternion) Conjugate() Quaternion {
+//Add two quaternions (q1 + q2)
+func (q Quaternion) Add(q2 Quaternion) Quaternion {
+	return Quaternion{X: q.X + q2.X, Y: q.Y + q2.Y, Z: q.Z + q2.Z, W: q.W + q2.W}
+}
+
+//Subtract two quaternions (q1 - q2)
+func (q Quaternion) Subtract(q2 Quaternion) Quaternion {
+	return Quaternion{X: q.X - q2.X, Y: q.Y - q2.Y, Z: q.Z - q2.Z, W: q.W - q2.W}
+}
+
+//Multiply two quaternions together
+func (q Quaternion) Multiply(q2 Quaternion) Quaternion {
 	return Quaternion{
-		X: q.X * -1,
-		Y: q.Y * -1,
-		Z: q.Z * -1,
-		W: q.W * 1,
+		W: q.W*q2.W - (q.X*q2.X + q.Y*q2.Y + q.Z*q2.Z),
+		X: q.Y*q2.Z - q.Z*q2.Y + q.W*q2.X + q.X*q2.W,
+		Y: q.Z*q2.X - q.X*q2.Z + q.W*q2.Y + q.Y*q2.W,
+		Z: q.X*q2.Y - q.Y*q2.X + q.W*q2.Z + q.Z*q2.W,
 	}
 }
 
-//Decompose the quaternion into a slice of floats
-func (q Quaternion) Decompose() []float32 { return []float32{q.X, q.Y, q.Z, q.W} }
+//Conjugate the quaternion (invert)
+func (q Quaternion) Conjugate() Quaternion {
+	return Quaternion{X: -q.X, Y: -q.Y, Z: -q.Z, W: -q.W}
+}
+
+//Invert the quaternion
+func (q Quaternion) Invert() Quaternion {
+	sqrl := q.SqrLength()
+	return Quaternion{X: -q.X / sqrl, Y: -q.Y / sqrl, Z: -q.Z / sqrl, W: -q.W / sqrl}
+}
+
+//Scale the quaternion (q * scale)
+func (q Quaternion) Scale(scale float32) Quaternion {
+	return Quaternion{X: q.X * scale, Y: q.Y * scale, Z: q.Z * scale, W: q.W * scale}
+}
 
 //Length of the quaternion
 func (q Quaternion) Length() float32 {
 	return float32(math.Sqrt(float64(q.X*q.X) + float64(q.Y*q.Y) + float64(q.Z*q.Z) + float64(q.W*q.W)))
 }
 
-//SqrLength is the squared length of the quaternion
+//SqrLength of the quaternion
 func (q Quaternion) SqrLength() float32 {
-	return float32(float64(q.X*q.X) + float64(q.Y*q.Y) + float64(q.Z*q.Z) + float64(q.W*q.W))
+	return float32((float64(q.X*q.X) + float64(q.Y*q.Y) + float64(q.Z*q.Z) + float64(q.W*q.W)))
 }
 
-//Scale the quaternion (v * scale)
-func (q Quaternion) Scale(scale float32) Quaternion {
-	return Quaternion{X: q.X * scale, Y: q.Y * scale, Z: q.Z * scale, W: q.W * scale}
+//Lerp lineraly interpolates between 2 points
+func (q Quaternion) Lerp(q2 Quaternion, t float32) Quaternion {
+	//TODO: Implement Lerp and Slerp
+	return q
 }
 
-//Normalize a quaternion
-func (q Quaternion) Normalize() Quaternion {
-	length := q.Length()
-	if length == 0 {
-		length = 1
-	}
-
-	ilength := 1 / length
-	return q.Scale(ilength)
+//Slerp spherically interpolates between 2 points
+func (q Quaternion) Slerp(q2 Quaternion, t float32) Quaternion {
+	//TODO: Implement Lerp and Slerp
+	return q
 }
 
-//Multiply two Quaternion together, doing queraternion mathmatics
-func (q Quaternion) Multiply(q2 Quaternion) Quaternion {
-	return Quaternion{
-		X: q.X*q2.W + q.W*q2.X + q.Y*q2.Z - q.Z*q2.Y,
-		Y: q.Y*q2.W + q.W*q2.Y + q.Z*q2.X - q.X*q2.Z,
-		Z: q.Z*q2.W + q.W*q2.Z + q.X*q2.Y - q.Y*q2.X,
-		W: q.W*q2.W - q.X*q2.X - q.Y*q2.Y - q.Z*q2.Z,
-	}
-}
-
-//Lerp a vector towards another vector
-func (q Quaternion) Lerp(target Quaternion, amount float32) Quaternion {
-	return Quaternion{
-		X: q.X + amount*(target.X-q.X),
-		Y: q.Y + amount*(target.Y-q.Y),
-		Z: q.Z + amount*(target.Z-q.Z),
-		W: q.W + amount*(target.W-q.W),
-	}
-}
-
-//Nlerp slerp-optimized interpolation between two quaternions
-func (q Quaternion) Nlerp(target Quaternion, amount float32) Quaternion {
-	return q.Lerp(target, amount).Normalize()
-}
-
-//Slerp Spherically Lerped
-func (q Quaternion) Slerp(q2 Quaternion, amount float32) Quaternion {
-	cosHalfTheta := q.X*q2.X + q.Y*q2.Y + q.Z*q2.Z + q.W*q2.W
-	if math.Abs((float64(cosHalfTheta))) >= 1 {
-		return q
-	}
-
-	if cosHalfTheta > 0.95 {
-		return q.Nlerp(q2, amount)
-	}
-
-	halfTheta := float32(math.Acos(float64(cosHalfTheta)))
-	sinHalfTheta := float32(math.Sqrt(float64(1 - cosHalfTheta*cosHalfTheta)))
-
-	if math.Abs(float64(sinHalfTheta)) < 0.001 {
-		return Quaternion{
-			X: q.X*0.5 + q.X*0.5,
-			Y: q.Y*0.5 + q.Y*0.5,
-			Z: q.Z*0.5 + q.Z*0.5,
-			W: q.W*0.5 + q.W*0.5,
-		}
-	}
-
-	ratioA := float32(math.Sin(float64((1-amount)*halfTheta)) / float64(sinHalfTheta))
-	ratioB := float32(math.Sin(float64(amount*halfTheta)) / float64(sinHalfTheta))
-
-	return Quaternion{
-		X: q.X*ratioA + q.X*ratioB,
-		Y: q.Y*ratioA + q.Y*ratioB,
-		Z: q.Z*ratioA + q.Z*ratioB,
-		W: q.W*ratioA + q.W*ratioB,
-	}
-}
-
-// Rotate a vector by the rotation this quaternion represents.
+//Rotate a vector by the quaternion
 func (q Quaternion) Rotate(v Vector3) Vector3 {
-	result := Vector3{}
-
-	result.X = v.X*(q.X*q.X+q.W*q.W-q.Y*q.Y-q.Z*q.Z) + v.Y*(2*q.X*q.Y-2*q.W*q.Z) + v.Z*(2*q.X*q.Z+2*q.W*q.Y)
-	result.Y = v.X*(2*q.W*q.Z+2*q.X*q.Y) + v.Y*(q.W*q.W-q.X*q.X+q.Y*q.Y-q.Z*q.Z) + v.Z*(-2*q.W*q.X+2*q.Y*q.Z)
-	result.Z = v.X*(-2*q.W*q.Y+2*q.X*q.Z) + v.Y*(2*q.W*q.X+2*q.Y*q.Z) + v.Z*(q.W*q.W-q.X*q.X-q.Y*q.Y+q.Z*q.Z)
-	return result
+	cong := q.Conjugate()
+	r := q.Multiply(Quaternion{v.X, v.Y, v.Z, 0}).Multiply(cong)
+	return Vector3{r.X, r.Y, r.Z}
 }
 
-//Forward returns a directional vector that is represented by this quaternion
-func (q Quaternion) Forward() Vector3 {
-	x, y, z, w := q.X, q.Y, q.Z, q.W
-	return Vector3{2 * (x*z - w*y), 2 * (y*z + w*x), 1 - 2*(x*x+y*y)}
-}
-
-//Backward returns a directional vector that is represented by this quaternion
-func (q Quaternion) Backward() Vector3 {
-	x, y, z, w := q.X, q.Y, q.Z, q.W
-	return Vector3{-(2 * (x*z - w*y)), -(2 * (y*z + w*x)), -(1 - 2*(x*x+y*y))}
-}
-
-//Up returns a directional vector that is represented by this quaternion
-func (q Quaternion) Up() Vector3 {
-	x, y, z, w := q.X, q.Y, q.Z, q.W
-	return Vector3{2 * (x*y - w*z), 1 - 2*(x*x+z*z), 2 * (y*z + w*x)}
-}
-
-//Down returns a directional vector that is represented by this quaternion
-func (q Quaternion) Down() Vector3 {
-	x, y, z, w := q.X, q.Y, q.Z, q.W
-	return Vector3{-(2 * (x*y - w*z)), -(1 - 2*(x*x+z*z)), -(2 * (y*z + w*x))}
-}
-
-//Left returns a directional vector that is represented by this quaternion
-func (q Quaternion) Left() Vector3 {
-	x, y, z, w := q.X, q.Y, q.Z, q.W
-	return Vector3{1 - 2*(y*y+z*z), 2 * (x*y + w*z), -2 * (x*z - w*y)}
-}
-
-//Right returns a directional vector that is represented by this quaternion
-func (q Quaternion) Right() Vector3 {
-	x, y, z, w := q.X, q.Y, q.Z, q.W
-	return Vector3{-(1 - 2*(y*y+z*z)), -(2 * (x*y + w*z)), -(-2 * (x*z - w*y))}
-}
-
-//ToAxisAngle returns the rotation angle and axis for a given quaternion
-func (q Quaternion) ToAxisAngle() (Vector3, float32) {
-
-	var den float32
-	var resAngle float32
-	var resAxis Vector3
-
-	if math.Abs(float64(q.W)) > 1 {
-		q = q.Normalize()
-	}
-
-	resAxis = Vector3{0, 0, 0}
-	resAngle = 2 * float32(math.Atan(float64(q.W)))
-	den = float32(math.Sqrt(float64(1 - q.W*q.W)))
-	if den > 0.0001 {
-		resAxis.X = q.X / den
-		resAxis.Y = q.Y / den
-		resAxis.Z = q.Z / den
-	} else {
-		resAxis.X = 1
-	}
-
-	return resAxis, resAngle
-}
-
-//ToEuler turns the quaternion into equivalent euler angles (roll, putch, yaw). Values are returned in Degrees
-func (q Quaternion) ToEuler() Vector3 {
-	x0 := 2 * (q.W*q.X + q.Y*q.Z)
-	x1 := 1 - 2*(q.X*q.X+q.Y*q.Y)
-	y0 := Clamp(float64(2*(q.W*q.Y-q.Z*q.X)), -1, 1)
-	z0 := 2 * (q.W*q.Z + q.X*q.Y)
-	z1 := 1 - 2*(q.Y*q.Y+q.Z*q.Z)
-
-	return Vector3{
-		X: float32(math.Atan2(float64(x0), float64(x1))) * Rad2Deg,
-		Y: float32(math.Asin(y0)) * Rad2Deg,
-		Z: float32(math.Atan2(float64(z0), float64(z1))) * Rad2Deg,
-	}
-}
-
-//ToMatrix turns the quaternion into a matrix representation
+//ToMatrix obsolete, use QuaternionRotation instead. This would just give isomorphic matrix
 func (q Quaternion) ToMatrix() Matrix {
-	w, x, y, z := q.W, q.X, q.Y, q.Z
-	return Matrix{
-		1 - 2*y*y - 2*z*z, 2*x*y + 2*w*z, 2*x*z - 2*w*y, 0,
-		2*x*y - 2*w*z, 1 - 2*x*x - 2*z*z, 2*y*z + 2*w*x, 0,
-		2*x*z + 2*w*y, 2*y*z - 2*w*x, 1 - 2*x*x - 2*y*y, 0,
-		0, 0, 0, 1,
-	}
+	log.Println("ToMatrix() isnt supported. Use NewMatrixRotation or NewMatrixRotationIsomorphic")
+	return NewMatrixRotation(q)
 }
+
+//Decompose the Vector into a new slice of floats.
+func (q Quaternion) Decompose() []float32 { return []float32{q.X, q.Y, q.Z, q.W} }
+
+//DecomposePointer the vector into a slice of floats
+func (q Quaternion) DecomposePointer() *[4]float32 { return (*[4]float32)(unsafe.Pointer(&q)) }
 
 /*
 
