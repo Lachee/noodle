@@ -7,25 +7,10 @@ import (
 
 //Matrix A representation of a 4 x 4 matrix
 type Matrix struct {
-	M00 float32
-	M10 float32
-	M20 float32
-	M30 float32
-
-	M01 float32
-	M11 float32
-	M21 float32
-	M31 float32
-
-	M02 float32
-	M12 float32
-	M22 float32
-	M32 float32
-
-	M03 float32
-	M13 float32
-	M23 float32
-	M33 float32
+	M0, M1, M2, M3     float32
+	M4, M5, M6, M7     float32
+	M8, M9, M10, M11   float32
+	M12, M13, M14, M15 float32
 }
 
 //NewMatrix creates a identity
@@ -35,15 +20,11 @@ func NewMatrix() Matrix {
 
 //NewMatrixTranslate creates a new translate matrix
 func NewMatrixTranslate(v Vector3) Matrix {
-	var r Matrix
-	r.M00 = 1
-	r.M11 = 1
-	r.M22 = 1
-	r.M33 = 1
-	r.M30 = v.X
-	r.M31 = v.Y
-	r.M32 = v.Z
-	return r
+	return Matrix{
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		v.X, v.Y, v.Z, 1}
 }
 
 //NewMatrixScale creates a new scale matrix
@@ -56,63 +37,36 @@ func NewMatrixScale(s Vector3) Matrix {
 	}
 }
 
-//NewMatrixRotation creates a new rotation matrix
-func NewMatrixRotation(q Quaternion) Matrix {
-	//https://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToMatrix/index.htm
-
-	var invs, tmp1, tmp2 float32
-	var m00, m11, m22, m10, m01, m20, m02, m21, m12 float32
-
-	sqx := q.X * q.X
-	sqy := q.Y * q.Y
-	sqz := q.Z * q.Z
-	sqw := q.W * q.W
-
-	// invs (inverse square length) is only required if quaternion is not already normalised
-	invs = 1.0 / (sqx + sqy + sqz + sqw)
-	m00 = (sqx - sqy - sqz + sqw) * invs // since sqw + sqx + sqy + sqz =1/invs*invs
-	m11 = (-sqx + sqy - sqz + sqw) * invs
-	m22 = (-sqx - sqy + sqz + sqw) * invs
-
-	tmp1 = q.X * q.Y
-	tmp2 = q.Z * q.W
-	m10 = 2.0 * (tmp1 + tmp2) * invs
-	m01 = 2.0 * (tmp1 - tmp2) * invs
-
-	tmp1 = q.X * q.Z
-	tmp2 = q.Y * q.W
-	m20 = 2.0 * (tmp1 - tmp2) * invs
-	m02 = 2.0 * (tmp1 + tmp2) * invs
-
-	tmp1 = q.Y * q.Z
-	tmp2 = q.X * q.W
-	m21 = 2.0 * (tmp1 + tmp2) * invs
-	m12 = 2.0 * (tmp1 - tmp2) * invs
+// NewMatrixRotation returns the homogeneous 3D rotation matrix corresponding to the quaternion.
+func NewMatrixRotation(q1 Quaternion) Matrix {
+	w, x, y, z := q1.W, q1.X, q1.Y, q1.Z
 	return Matrix{
-		M00: m00,
-		M11: m11,
-		M22: m22,
-		M10: m10,
-		M01: m01,
-		M20: m20,
-		M02: m02,
-		M21: m21,
-		M12: m12,
+		1 - 2*y*y - 2*z*z, 2*x*y + 2*w*z, 2*x*z - 2*w*y, 0,
+		2*x*y - 2*w*z, 1 - 2*x*x - 2*z*z, 2*y*z + 2*w*x, 0,
+		2*x*z + 2*w*y, 2*y*z - 2*w*x, 1 - 2*x*x - 2*y*y, 0,
+		0, 0, 0, 1,
 	}
 }
 
 //NewMatrixPerspective creates a perspective projection matrix. FOVY is in degrees
-func NewMatrixPerspective(fovy, aspectRatio, near, far float32) Matrix {
-	fieldOfViewInRadians := float64(fovy) * (math.Pi / 180.0)
-	f := float32(1.0 / math.Tan(fieldOfViewInRadians/2.0))
-	rangeInv := 1.0 / (near - far)
+func NewMatrixPerspective(fovy, aspect, near, far float32) Matrix {
 
+	nmf := near - far
+	rangeInv := 1.0 / nmf
+	f := float32(math.Tan(math.Pi*0.5 - 0.5*float64(fovy*Deg2Rad)))
 	return Matrix{
-		f / aspectRatio, 0, 0, 0,
+		f / aspect, 0, 0, 0,
 		0, f, 0, 0,
 		0, 0, (near + far) * rangeInv, -1,
 		0, 0, near * far * rangeInv * 2, 0,
 	}
+
+	/*
+		//Identitcal
+		fieldOfViewInRadians := float64(fovy) * (math.Pi / 180.0)
+		nmf, f := near-far, float32(1./math.Tan(fieldOfViewInRadians/2.0))
+		return Matrix{float32(f / aspect), 0, 0, 0, 0, float32(f), 0, 0, 0, 0, float32((near + far) / nmf), -1, 0, 0, float32((2. * far * near) / nmf), 0}
+	*/
 }
 
 //NewMatrixOrtho creates a orthographic projection
@@ -126,128 +80,100 @@ func NewMatrixFrustum(left, right, bottom, top, near, far float32) Matrix {
 	rml, tmb, fmn := (right - left), (top - bottom), (far - near)
 	A, B, C, D := (right+left)/rml, (top+bottom)/tmb, -(far+near)/fmn, -(2*far*near)/fmn
 
-	var r Matrix
-	r.M00 = float32((2. * near) / rml)
-	r.M11 = float32((2. * near) / tmb)
-	r.M20 = A
-	r.M21 = B
-	r.M22 = C
-	r.M23 = -1
-	r.M32 = D
-	return r
+	return Matrix{float32((2. * near) / rml), 0, 0, 0, 0, float32((2. * near) / tmb), 0, 0, float32(A), float32(B), float32(C), -1, 0, 0, float32(D), 0}
 }
 
 //NewMatrixLookAt creates a matrix to look at a target
 func NewMatrixLookAt(eye, target, up Vector3) Matrix {
 	f := target.Subtract(eye).Normalize()
-	s := f.CrossProduct(up.Normalize()).Normalize()
-	u := s.CrossProduct(f)
-	matrix := Matrix{
-		M00: float32(s.X),
-		M10: float32(u.X),
-		M20: float32(-f.X),
-		M30: 0,
+	s := f.Cross(up.Normalize()).Normalize()
+	u := s.Cross(f)
 
-		M01: float32(s.Y),
-		M11: float32(u.Y),
-		M21: float32(-f.Y),
-		M31: 0,
-
-		M02: float32(s.Z),
-		M12: float32(u.Z),
-		M22: float32(-f.Z),
-		M32: 0,
-
-		M03: 0,
-		M13: 0,
-		M23: 0,
-		M33: 1,
+	M := Matrix{
+		s.X, u.X, -f.X, 0,
+		s.Y, u.Y, -f.Y, 0,
+		s.Z, u.Z, -f.Z, 0,
+		0, 0, 0, 1,
 	}
 
-	//	return M.Mul4(Translate3D(float32(-eye[0]), float32(-eye[1]), float32(-eye[2])))
-	return matrix.Multiply(NewMatrixTranslate(Vector3{-eye.X, -eye.Y, -eye.Z}))
+	return M.Multiply(NewMatrixTranslate(Vector3{float32(-eye.X), float32(-eye.Y), float32(-eye.Z)}))
 }
 
 //Trace of the matrix (sum of values along diagonal)
 func (m Matrix) Trace() float32 {
-	return m.M00 + m.M11 + m.M22 + m.M33
+	return m.M0 + m.M5 + m.M10 + m.M15
 }
 
 //Add two matrices
 func (m Matrix) Add(right Matrix) Matrix {
-	return Matrix{
-		m.M00 + right.M00, m.M01 + right.M01, m.M02 + right.M02, m.M03 + right.M03,
-		m.M10 + right.M10, m.M11 + right.M11, m.M12 + right.M12, m.M13 + right.M13,
-		m.M20 + right.M20, m.M21 + right.M21, m.M22 + right.M22, m.M23 + right.M23,
-		m.M30 + right.M30, m.M31 + right.M31, m.M32 + right.M32, m.M33 + right.M33,
-	}
+	m1 := m.DecomposePointer()
+	m2 := right.DecomposePointer()
+	return Matrix{m1[0] + m2[0], m1[1] + m2[1], m1[2] + m2[2], m1[3] + m2[3], m1[4] + m2[4], m1[5] + m2[5], m1[6] + m2[6], m1[7] + m2[7], m1[8] + m2[8], m1[9] + m2[9], m1[10] + m2[10], m1[11] + m2[11], m1[12] + m2[12], m1[13] + m2[13], m1[14] + m2[14], m1[15] + m2[15]}
 }
 
 //Subtract two matrices
 func (m Matrix) Subtract(right Matrix) Matrix {
+	m1 := m.DecomposePointer()
+	m2 := right.DecomposePointer()
+	return Matrix{m1[0] - m2[0], m1[1] - m2[1], m1[2] - m2[2], m1[3] - m2[3], m1[4] - m2[4], m1[5] - m2[5], m1[6] - m2[6], m1[7] - m2[7], m1[8] - m2[8], m1[9] - m2[9], m1[10] - m2[10], m1[11] - m2[11], m1[12] - m2[12], m1[13] - m2[13], m1[14] - m2[14], m1[15] - m2[15]}
+}
+
+//Scale a matrix
+func (m Matrix) Scale(c float32) Matrix {
+	m1 := m.DecomposePointer()
+	return Matrix{m1[0] * c, m1[1] * c, m1[2] * c, m1[3] * c, m1[4] * c, m1[5] * c, m1[6] * c, m1[7] * c, m1[8] * c, m1[9] * c, m1[10] * c, m1[11] * c, m1[12] * c, m1[13] * c, m1[14] * c, m1[15] * c}
+}
+
+//Multiply 2 matrixs together
+func (m Matrix) Multiply(right Matrix) Matrix {
+	m1 := m.DecomposePointer()
+	m2 := m.DecomposePointer()
 	return Matrix{
-		m.M00 - right.M00, m.M01 - right.M01, m.M02 - right.M02, m.M03 - right.M03,
-		m.M10 - right.M10, m.M11 - right.M11, m.M12 - right.M12, m.M13 - right.M13,
-		m.M20 - right.M20, m.M21 - right.M21, m.M22 - right.M22, m.M23 - right.M23,
-		m.M30 - right.M30, m.M31 - right.M31, m.M32 - right.M32, m.M33 - right.M33,
+		m1[0]*m2[0] + m1[4]*m2[1] + m1[8]*m2[2] + m1[12]*m2[3],
+		m1[1]*m2[0] + m1[5]*m2[1] + m1[9]*m2[2] + m1[13]*m2[3],
+		m1[2]*m2[0] + m1[6]*m2[1] + m1[10]*m2[2] + m1[14]*m2[3],
+		m1[3]*m2[0] + m1[7]*m2[1] + m1[11]*m2[2] + m1[15]*m2[3],
+		m1[0]*m2[4] + m1[4]*m2[5] + m1[8]*m2[6] + m1[12]*m2[7],
+		m1[1]*m2[4] + m1[5]*m2[5] + m1[9]*m2[6] + m1[13]*m2[7],
+		m1[2]*m2[4] + m1[6]*m2[5] + m1[10]*m2[6] + m1[14]*m2[7],
+		m1[3]*m2[4] + m1[7]*m2[5] + m1[11]*m2[6] + m1[15]*m2[7],
+		m1[0]*m2[8] + m1[4]*m2[9] + m1[8]*m2[10] + m1[12]*m2[11],
+		m1[1]*m2[8] + m1[5]*m2[9] + m1[9]*m2[10] + m1[13]*m2[11],
+		m1[2]*m2[8] + m1[6]*m2[9] + m1[10]*m2[10] + m1[14]*m2[11],
+		m1[3]*m2[8] + m1[7]*m2[9] + m1[11]*m2[10] + m1[15]*m2[11],
+		m1[0]*m2[12] + m1[4]*m2[13] + m1[8]*m2[14] + m1[12]*m2[15],
+		m1[1]*m2[12] + m1[5]*m2[13] + m1[9]*m2[14] + m1[13]*m2[15],
+		m1[2]*m2[12] + m1[6]*m2[13] + m1[10]*m2[14] + m1[14]*m2[15],
+		m1[3]*m2[12] + m1[7]*m2[13] + m1[11]*m2[14] + m1[15]*m2[15],
 	}
-}
-
-//Multiply two matrix together. Note that order matters.
-func (m Matrix) Multiply(m2 Matrix) Matrix {
-	var r Matrix
-	r.M00 = m.M00*m2.M00 + m.M01*m2.M10 + m.M02*m2.M20 + m.M03*m2.M30
-	r.M01 = m.M00*m2.M01 + m.M01*m2.M11 + m.M02*m2.M21 + m.M03*m2.M31
-	r.M02 = m.M00*m2.M02 + m.M01*m2.M12 + m.M02*m2.M22 + m.M03*m2.M32
-	r.M03 = m.M00*m2.M03 + m.M01*m2.M13 + m.M02*m2.M23 + m.M03*m2.M33
-
-	r.M10 = m.M10*m2.M00 + m.M11*m2.M10 + m.M12*m2.M20 + m.M13*m2.M30
-	r.M11 = m.M10*m2.M01 + m.M11*m2.M11 + m.M12*m2.M21 + m.M13*m2.M31
-	r.M12 = m.M10*m2.M02 + m.M11*m2.M12 + m.M12*m2.M22 + m.M13*m2.M32
-	r.M13 = m.M10*m2.M03 + m.M11*m2.M13 + m.M12*m2.M23 + m.M13*m2.M33
-
-	r.M20 = m.M20*m2.M00 + m.M21*m2.M10 + m.M22*m2.M20 + m.M23*m2.M30
-	r.M21 = m.M20*m2.M01 + m.M21*m2.M11 + m.M22*m2.M21 + m.M23*m2.M31
-	r.M22 = m.M20*m2.M02 + m.M21*m2.M12 + m.M22*m2.M22 + m.M23*m2.M32
-	r.M23 = m.M20*m2.M03 + m.M21*m2.M13 + m.M22*m2.M23 + m.M23*m2.M33
-
-	r.M30 = m.M30*m2.M00 + m.M31*m2.M10 + m.M32*m2.M20 + m.M33*m2.M30
-	r.M31 = m.M30*m2.M01 + m.M31*m2.M11 + m.M32*m2.M21 + m.M33*m2.M31
-	r.M32 = m.M30*m2.M02 + m.M31*m2.M12 + m.M32*m2.M22 + m.M33*m2.M32
-	r.M33 = m.M30*m2.M03 + m.M31*m2.M13 + m.M32*m2.M23 + m.M33*m2.M33
-	return r
-}
-
-//MultiplyVector3 multiplies a vector with the matrix (m * v)
-func (m Matrix) MultiplyVector3(v Vector3) Vector3 {
-	var r Vector3
-
-	fInvW := 1.0 / (m.M30*v.X + m.M31*v.Y + m.M32*v.Z + m.M33)
-	r.X = (m.M00*v.X + m.M01*v.Y + m.M02*v.Z + m.M03) * fInvW
-	r.Y = (m.M10*v.X + m.M11*v.Y + m.M12*v.Z + m.M13) * fInvW
-	r.Z = (m.M20*v.X + m.M21*v.Y + m.M22*v.Z + m.M23) * fInvW
-	return r
 }
 
 //MultiplyVector4 multiplies a vector with the matrix (m * v)
 func (m Matrix) MultiplyVector4(v Vector4) Vector4 {
-	var r Vector4
-
-	r.X = m.M00*v.X + m.M01*v.Y + m.M02*v.Z + m.M03*v.W
-	r.Y = m.M10*v.X + m.M11*v.Y + m.M12*v.Z + m.M13*v.W
-	r.Z = m.M20*v.X + m.M21*v.Y + m.M22*v.Z + m.M23*v.W
-	r.W = m.M30*v.X + m.M31*v.Y + m.M32*v.Z + m.M33*v.W
-	return r
+	m1 := m.DecomposePointer()
+	m2 := v.DecomposePointer()
+	return Vector4{
+		m1[0]*m2[0] + m1[4]*m2[1] + m1[8]*m2[2] + m1[12]*m2[3],
+		m1[1]*m2[0] + m1[5]*m2[1] + m1[9]*m2[2] + m1[13]*m2[3],
+		m1[2]*m2[0] + m1[6]*m2[1] + m1[10]*m2[2] + m1[14]*m2[3],
+		m1[3]*m2[0] + m1[7]*m2[1] + m1[11]*m2[2] + m1[15]*m2[3],
+	}
 }
 
-//Translation gets the translation component
-func (m Matrix) Translation() Vector3 {
-	return Vector3{m.M03, m.M13, m.M23}
+//TransformCoordinate multiplies a 3D vector by a transformation given by
+// the homogeneous 4D matrix m, applying any translation.
+// If this transformation is non-affine, it will project this
+// vector onto the plane w=1 before returning the result.
+func (m Matrix) TransformCoordinate(v Vector3) Vector3 {
+	t := v.ToVector4()
+	t = m.MultiplyVector4(t)
+	t = t.Scale(1 / t.W)
+	return Vector3{t.X, t.Y, t.Z}
 }
 
 //Decompose turns a matrix into an slice of floats
 func (m Matrix) Decompose() []float32 {
-	return []float32{m.M00, m.M10, m.M20, m.M30, m.M01, m.M11, m.M21, m.M31, m.M02, m.M12, m.M22, m.M32, m.M03, m.M13, m.M23, m.M33}
+	return []float32{m.M0, m.M1, m.M2, m.M3, m.M4, m.M5, m.M6, m.M7, m.M8, m.M9, m.M10, m.M11, m.M12, m.M13, m.M14, m.M15}
 }
 
 //DecomposePointer is an unsafe Decompose. Instead of the values being copied, a pointer to the matrix is cast into a float array pointer and returned.

@@ -26,9 +26,6 @@ var (
 	inputHandler    *InputHandler
 	app             Application
 
-	width  int
-	height int
-
 	texture    *Texture
 	frameTime  float64
 	deltaTime  float64
@@ -62,43 +59,18 @@ func Input() *InputHandler {
 	return inputHandler
 }
 
-//Width gets the width of the screen
-func Width() int {
-	return width
-}
-
-//Height gets the width of the screen
-func Height() int {
-	return height
-}
-
 //Run setups the WebGL context and runs the application. It is blocking and returns an exit code if Exit() is ever called.
 func Run(application Application) int {
 	app = application
 
-	inputHandler = newInput()
+	//Prepare the everything
 	document = js.Global().Get("document")
 	canvas = document.Call("getElementById", "gocanvas")
+	GL = newWebGL(canvas)
+	inputHandler = newInput()
 
-	//Set the width and height of the canvas to conver the entire screen
-	width = document.Get("body").Get("clientWidth").Int()
-	height = document.Get("body").Get("clientHeight").Int()
-	SetCanvasSize(width, height)
+	//Prepare the awaiter
 	awaiter = make(chan int, 0)
-
-	//Get the GL context
-	contextOptions := js.Global().Get("JSON").Call("parse", "{ \"desynchronized\": true }")
-	context := canvas.Call("getContext", "webgl", contextOptions)
-	if context.IsUndefined() {
-		context = canvas.Call("getContext", "experimental-webgl", contextOptions)
-	}
-	if context.IsUndefined() {
-		js.Global().Call("alert", "browser might not support webgl")
-		return 0
-	}
-
-	//Create a new GL instance
-	GL = newWebGL(context)
 
 	//Setup the animation frame
 	if !app.Start() {
@@ -169,8 +141,7 @@ func Run(application Application) int {
 	})
 	defer onKeyUpEvent.Release()
 
-	//Begin rendering
-	GL.Viewport(0, 0, width, height)
+	//Request a animation frame.
 	frameRenderFunc = js.FuncOf(onRequestAnimationFrame)
 	defer frameRenderFunc.Release()
 	js.Global().Call("requestAnimationFrame", frameRenderFunc)
@@ -182,15 +153,6 @@ func AddEventListener(event string, fn func(this js.Value, args []js.Value) inte
 	jsfunc := js.FuncOf(fn)
 	document.Call("addEventListener", event, jsfunc)
 	return jsfunc
-}
-
-//SetCanvasSize the size of the canvas
-func SetCanvasSize(w, h int) {
-	canvas.Set("width", w)
-	canvas.Set("height", h)
-	width = canvas.Get("width").Int()
-	height = canvas.Get("height").Int()
-	log.Println("resized canvas")
 }
 
 //RequestRedraw requests for a new animation frame
@@ -217,7 +179,11 @@ func onRequestAnimationFrame(this js.Value, args []js.Value) interface{} {
 	//Call update on the Application
 	app.Update(float32(deltaTime))
 
-	//Render everything
+	//Prepare the view port and then render everything
+	width, height := GL.Resize()
+	GL.Viewport(0, 0, width, height)
+
+	//Clear the canvas
 	app.Render()
 
 	//If we need to draw again, then do so

@@ -37,7 +37,6 @@ type NineSliceApp struct {
 	dimension Vector2 //Translated size of the geometry
 }
 
-
 //Start is called by the noodle engine when ready
 func (app *NineSliceApp) Start() bool {
 
@@ -48,7 +47,7 @@ func (app *NineSliceApp) Start() bool {
 	app.uvBuffer = n.GL.NewBuffer(n.GlArrayBuffer, rotCubeUV, n.GlStaticDraw)
 
 	// == Load the cube image and the shaders
-	app.textureBorder = 5 // Border Size of the image
+	app.textureBorder = 5                           // Border Size of the image
 	image, err := n.LoadImage("resources/tile.png") // The image URL
 	if err != nil {
 		log.Fatalln("Failed to load image", err)
@@ -84,14 +83,14 @@ func (app *NineSliceApp) Start() bool {
 	app.shader.Use()
 
 	// == Set WeebGL properties
-	n.GL.ClearColor(0.5, 0.5, 0.5, 0.9)
+	//n.GL.ClearColor(0.5, 0.5, 0.5, 0.9)
 	n.GL.ClearDepth(1)
-	n.GL.Viewport(0, 0, n.Width(), n.Height())
+	n.GL.Viewport(0, 0, n.GL.Width(), n.GL.Height())
 	n.GL.DepthFunc(n.GlLEqual)
 
 	// == Create Matrixes
 	// Generate and apply projection matrix
-	app.projMatrix = n.NewMatrixPerspective(45.0, float64(n.Width())/float64(n.Height()), 1, 100.0)
+	app.projMatrix = n.NewMatrixPerspective(45.0, n.GL.AspectRatio(), 1, 100.0)
 	n.GL.UniformMatrix4fv(app.uProjMatrixLoc, app.projMatrix)
 
 	// Generate and apply view matrix
@@ -117,9 +116,12 @@ func (app *NineSliceApp) Update(dt float32) {
 	app.dimension = n.NewVector2(float32(app.textureBorder)/box.X, float32(app.textureBorder)/box.Y)
 
 	//Update the move matrix
-	movMatrix := n.NewMatrixRotate(n.NewVector3Up(), n.PI*2)
-	movMatrix = movMatrix.Multiply(n.NewMatrixScale(scale.ToVector3()))
-	app.moveMatrix = movMatrix
+	//TODO: Fix This
+	/*
+		movMatrix := n.NewMatrixRotate(n.Vector3{0, 1, 0}, n.PI*2)
+		movMatrix = movMatrix.Multiply(n.NewMatrixScale(scale.ToVector3()))
+		app.moveMatrix = movMatrix
+	*/
 }
 
 //Render occurs when the screen needs updating

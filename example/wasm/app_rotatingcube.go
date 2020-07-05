@@ -18,7 +18,7 @@ type RotatingCubeApp struct {
 	shader *n.Shader
 
 	uProjMatrixLoc  n.WebGLUniformLocation
-	uViewMatrixLoc n.WebGLUniformLocation
+	uViewMatrixLoc  n.WebGLUniformLocation
 	uModelMatrixLoc n.WebGLUniformLocation
 	uSamplerLoc     n.WebGLUniformLocation
 
@@ -37,7 +37,6 @@ func (app *RotatingCubeApp) prepareImage() (*n.Image, error) {
 	const width = 255
 	const height = 255
 
-	
 	//Create the image
 	upLeft := image.Point{0, 0}
 	lowRight := image.Point{width, height}
@@ -93,15 +92,15 @@ func (app *RotatingCubeApp) Start() bool {
 	app.shader.Use()
 
 	// == Set WeebGL properties
-	n.GL.ClearColor(0.5, 0.5, 0.5, 0.9)
+	//n.GL.ClearColor(0.5, 0.5, 0.5, 0.9)
 	n.GL.ClearDepth(1)
-	n.GL.Viewport(0, 0, n.Width(), n.Height())
+	n.GL.Viewport(0, 0, n.GL.Width(), n.GL.Height())
 	n.GL.DepthFunc(n.GlLEqual)
 
 	// == Create Matrixes
 	// Generate and apply projection matrix
-	app.projMatrix = n.NewMatrixPerspective(45.0, float64(n.Width())/float64(n.Height()), 1, 100.0)
-	n.GL.UniformMatrix4fv(app.uProjMatrixLoc, app.projMatrix)
+	//app.projMatrix = n.NewMatrixPerspective(45.0, n.GL.AspectRatio(), 1, 100.0)
+	//n.GL.UniformMatrix4fv(app.uProjMatrixLoc, app.projMatrix)
 
 	// Generate and apply view matrix
 	app.viewMatrix = n.NewMatrixLookAt(Vector3{3.0, 3.0, 3.0}, Vector3{0, 0, 0}, Vector3{0, 1, 0})
@@ -116,17 +115,39 @@ func (app *RotatingCubeApp) Start() bool {
 
 //Update occurs once a frame
 func (app *RotatingCubeApp) Update(dt float32) {
-	app.rotation = app.rotation + dt/500
+	app.rotation = app.rotation + dt/1
+	app.rotation = 1
 
-	//Update the move matrix
-	movMatrix := n.NewMatrixRotate(n.NewVector3Up(), 0.5)
-	movMatrix = movMatrix.Multiply(n.NewMatrixRotate(n.NewVector3Forward(), 0.3*app.rotation))
-	movMatrix = movMatrix.Multiply(n.NewMatrixRotate(n.NewVector3Right(), 0.2*app.rotation))
-	app.moveMatrix = movMatrix
+	app.moveMatrix = n.NewMatrixTranslate(Vector3{0, 0, 0})
+	/*
+
+		//Update the move matrix
+		axis := Vector3{0, 1, 1}
+		angle := float32(0.5)
+
+			var movMatrix Matrix
+			rota := n.NewQuaternionAxis(axis, angle)
+			rotb := n.NewQuaternionAxis(n.Vector3{0, 0, 1}, 0.3*app.rotation)
+			rotc := n.NewQuaternionAxis(n.Vector3{1, 0, 0}, 0.2*app.rotation)
+
+			movMatrix = n.NewMatrixRotation(rota)
+			movMatrix = movMatrix.Multiply(n.NewMatrixRotation(rotb))
+			movMatrix = movMatrix.Multiply(n.NewMatrixRotation(rotc))
+
+			app.moveMatrix = movMatrix
+	*/
+
 }
 
 //Render occurs when the screen needs updating
 func (app *RotatingCubeApp) Render() {
+
+	//Set the clear colour
+	n.GL.ClearColor(n.White)
+
+	//Force the projection matrix to update this frame.
+	app.projMatrix = n.NewMatrixPerspective(45.0, n.GL.AspectRatio(), 1, 100.0)
+	n.GL.UniformMatrix4fv(app.uProjMatrixLoc, app.projMatrix)
 
 	//Update matrix
 	n.GL.UniformMatrix4fv(app.uModelMatrixLoc, app.moveMatrix)

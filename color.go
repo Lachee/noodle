@@ -144,10 +144,10 @@ func (c Color) ToInt() int {
 
 //ToTint converts the colour into a float32 tint which is used in shaders.
 func (c Color) ToTint() float32 {
-	red 	:= uint32(c.R)
-	green 	:= uint32(c.G) << 8
-	blue 	:= uint32(c.B) << 16
-	alpha 	:= uint32(c.A) << 24
+	red := uint32(c.R)
+	green := uint32(c.G) << 8
+	blue := uint32(c.B) << 16
+	alpha := uint32(c.A) << 24
 	return math.Float32frombits((alpha | blue | green | red) & 0xfeffffff)
 }
 

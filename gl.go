@@ -26,12 +26,31 @@ type WebGLTexture = js.Value
 
 //WebGL is the base class that wraps GL functionality.
 type WebGL struct {
-	context js.Value
+	context                   js.Value
+	canvas                    js.Value
+	targetWidth, targetHeight int
 }
 
-func newWebGL(context js.Value) *WebGL {
+func newWebGL(canvas js.Value) *WebGL {
+
+	//Get the GL context
+	contextOptions := js.Global().Get("JSON").Call("parse", "{ \"desynchronized\": true }")
+	context := canvas.Call("getContext", "webgl", contextOptions)
+	if context.IsUndefined() {
+		context = canvas.Call("getContext", "experimental-webgl", contextOptions)
+	}
+
+	//Verify we actually have a context
+	if context.IsUndefined() {
+		js.Global().Call("alert", "browser might not support webgl")
+		log.Fatalln("Context is undefined. Browser doesn't support WebGL!")
+	}
+
 	return &WebGL{
-		context: context,
+		canvas:       canvas,
+		context:      context,
+		targetWidth:  -1,
+		targetHeight: -1,
 	}
 }
 
@@ -180,8 +199,8 @@ func (gl *WebGL) EnableVertexAttribArray(position WebGLAttributeLocation) {
 }
 
 //ClearColor sets the colour the screen will be cleared to
-func (gl *WebGL) ClearColor(r, g, b, a float64) {
-	gl.context.Call("clearColor", float32(r), float32(g), float32(b), float32(a))
+func (gl *WebGL) ClearColor(color Color) {
+	gl.context.Call("clearColor", color.R, color.G, color.B, color.A)
 }
 
 //ClearDepth sets the z value that is set to the depth buffer every frame
@@ -193,6 +212,41 @@ func (gl *WebGL) ClearDepth(depth float64) {
 func (gl *WebGL) Viewport(x, y, width, height int) {
 	gl.context.Call("viewport", x, y, width, height)
 }
+
+//Resize updates the size of the canvas to be contained completely within its parent
+func (gl *WebGL) Resize() (int, int) {
+
+	width := gl.canvas.Get("width").Int()
+	height := gl.canvas.Get("height").Int()
+	displayWidth := gl.canvas.Get("clientWidth").Int()
+	displayHeight := gl.canvas.Get("clientHeight").Int()
+
+	//If we manually set it, then do so.
+	if (gl.targetWidth | gl.targetHeight) > 0 {
+		displayWidth = gl.targetWidth
+		displayHeight = gl.targetHeight
+	}
+
+	if width != displayWidth || height != displayHeight {
+		gl.canvas.Set("width", displayWidth)
+		gl.canvas.Set("height", displayHeight)
+		return displayWidth, displayHeight
+	}
+
+	return width, height
+}
+
+//Width of the canvas in pixels
+func (gl *WebGL) Width() int { return gl.canvas.Get("width").Int() }
+
+//Height of the canvas in pixels
+func (gl *WebGL) Height() int { return gl.canvas.Get("height").Int() }
+
+//AspectRatio of the canvas
+func (gl *WebGL) AspectRatio() float32 { return float32(gl.Width()) / float32(gl.Height()) }
+
+//Size is the width and height of the canvas in pixels
+func (gl *WebGL) Size() Vector2 { return NewVector2i(gl.Width(), gl.Height()) }
 
 //DepthFunc specifies a function that compares incoming pixel depth to the current depth buffer value.
 func (gl *WebGL) DepthFunc(function GLEnum) {

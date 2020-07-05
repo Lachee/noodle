@@ -1,5 +1,7 @@
 package noodle
 
+import "log"
+
 //Transform2D is deprecated
 type Transform2D struct {
 	Position Vector2
@@ -54,7 +56,7 @@ func (t *Transform) GetPosition() Vector3 {
 	if t.needWorldUpdate {
 		t.updateWorld(false)
 	}
-	return t.worldMatrix.Translation()
+	return t.worldMatrix.TransformCoordinate(Vector3{0, 0, 0})
 }
 
 //GetWorldMatrix gets teh current world matrix
@@ -67,7 +69,16 @@ func (t *Transform) GetWorldMatrix() Matrix {
 
 //GetLocalMatrix returns a local matrix
 func (t *Transform) GetLocalMatrix() Matrix {
-	return NewMatrixTranslate(t.localPosition).Multiply(NewMatrixRotation(t.localRotation)).Multiply(NewMatrixScale(t.localScale))
+	translate := NewMatrixTranslate(t.localPosition)
+	rotation := NewMatrixRotation(t.localRotation)
+	scale := NewMatrixScale(t.localScale)
+	result := translate.Multiply(rotation).Multiply(scale)
+	log.Println("translate", translate)
+	log.Println("rotation", rotation)
+	log.Println("scale", scale)
+	log.Println("result", result)
+	log.Println("================")
+	return result
 }
 
 //SetParent sets the transform parent.
@@ -133,8 +144,8 @@ func (t *Transform) Rotate(q Quaternion) {
 //	if v2.SqrLength() > 0 {
 //		// first build rotation matrix
 //		zaxis := v2.Normalize().Negate()
-//		xaxis := zaxis.CrossProduct(up).Normalize().Negate()
-//		yaxis := zaxis.CrossProduct(xaxis)
+//		xaxis := zaxis.Cross(up).Normalize().Negate()
+//		yaxis := zaxis.Cross(xaxis)
 //		t.localRotation = NewQuaternionAxis(xaxis, yaxis, zaxis)
 //		t.requireWorldUpdate()
 //	}
@@ -143,7 +154,9 @@ func (t *Transform) Rotate(q Quaternion) {
 // Utilities
 
 //TransformPoint converts the point from local to world space.
-func (t *Transform) TransformPoint(p Vector3) Vector3 { return t.GetWorldMatrix().MultiplyVector3(p) }
+func (t *Transform) TransformPoint(p Vector3) Vector3 {
+	return t.GetWorldMatrix().TransformCoordinate(p)
+}
 
 func (t *Transform) addChild(child *Transform)    {}
 func (t *Transform) removeChild(child *Transform) {}

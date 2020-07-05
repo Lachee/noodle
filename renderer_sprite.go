@@ -106,8 +106,8 @@ func (b *SpriteRenderer) Begin() *SpriteRenderer {
 	GL.BlendFunc(GlSrcColor, GlOneMinusSrcAlpha)
 
 	//Set the projection X and Y
-	projX := float32(Width()) / b.Zoom
-	projY := float32(Height()) / b.Zoom
+	projX := float32(GL.Width()) / b.Zoom
+	projY := float32(GL.Height()) / b.Zoom
 	GL.Uniform2f(b.ufProjection, projX, projY)
 
 	//Set the camera

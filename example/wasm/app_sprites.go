@@ -42,16 +42,16 @@ func (ball *Ball) update(dt float32) {
 		ball.velocity.X *= -1
 		ball.transform.Position.X = 0
 		ball.angularVelocitySign = 1
-	} else if ball.transform.Position.X > float32(n.Width()) {
+	} else if ball.transform.Position.X > float32(n.GL.Width()) {
 		ball.velocity.X *= -1
-		ball.transform.Position.X = float32(n.Width())
+		ball.transform.Position.X = float32(n.GL.Width())
 		ball.angularVelocitySign = -1
 	}
 
 	ball.velocity.Y += -0.0005 * dt
-	if ball.transform.Position.Y > float32(n.Height()-ball.sprite.Height()) {
+	if ball.transform.Position.Y > float32(n.GL.Height()-ball.sprite.Height()) {
 		ball.velocity.Y *= -.90
-		ball.transform.Position.Y = float32(n.Height() - ball.sprite.Height())
+		ball.transform.Position.Y = float32(n.GL.Height() - ball.sprite.Height())
 		ball.angularVelocity *= 0.85
 	}
 }

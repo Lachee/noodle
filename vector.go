@@ -63,8 +63,8 @@ func (v Vector2) SqrLength() float32 {
 	return float32(float64(v.X*v.X) + float64(v.Y*v.Y))
 }
 
-//DotProduct of the vector
-func (v Vector2) DotProduct(v2 Vector2) float32 {
+//Dot of the vector
+func (v Vector2) Dot(v2 Vector2) float32 {
 	return v.X*v2.X + v.Y*v2.Y
 }
 
@@ -142,7 +142,7 @@ func (v Vector2) Distance(v2 Vector2) float32 {
 
 //Reflect a vector. The mirror normal can be invisioned as a mirror perpendicular to the surface that is hit.
 func (v Vector2) Reflect(mirrorNormal Vector2) Vector2 {
-	return v.Add(v.Scale(-2 * v.DotProduct(mirrorNormal)))
+	return v.Add(v.Scale(-2 * v.Dot(mirrorNormal)))
 }
 
 //Min value for each pair of components
@@ -221,13 +221,13 @@ func (v Vector3) SqrLength() float32 {
 	return float32(float64(v.X*v.X) + float64(v.Y*v.Y) + float64(v.Z*v.Z))
 }
 
-//DotProduct of the vector
-func (v Vector3) DotProduct(v2 Vector3) float32 {
+//Dot of the vector
+func (v Vector3) Dot(v2 Vector3) float32 {
 	return v.X*v2.X + v.Y*v2.Y + v.Z*v2.Z
 }
 
-//CrossProduct of the vector
-func (v Vector3) CrossProduct(other Vector3) Vector3 {
+//Cross of the vector
+func (v Vector3) Cross(other Vector3) Vector3 {
 	v1 := v.DecomposePointer()
 	v2 := other.DecomposePointer()
 	return Vector3{v1[1]*v2[2] - v1[2]*v2[1], v1[2]*v2[0] - v1[0]*v2[2], v1[0]*v2[1] - v1[1]*v2[0]}
@@ -258,7 +258,7 @@ func (v Vector3) Perpendicular() Vector3 {
 		cardinalAxis.Z = 1
 	}
 
-	return v.CrossProduct(*cardinalAxis)
+	return v.Cross(*cardinalAxis)
 }
 
 //Distance between two vectors
@@ -269,7 +269,7 @@ func (v Vector3) Distance(v2 Vector3) float32 {
 
 //Angle the vector creates with another vector
 func (v Vector3) Angle(v2 Vector3) float32 {
-	result := float32(math.Acos(Clamp(float64(v.DotProduct(v2)), -1, 1))) * Rad2Deg
+	result := float32(math.Acos(Clamp(float64(v.Dot(v2)), -1, 1))) * Rad2Deg
 	if result < 0 {
 		result += 360
 	}
@@ -323,7 +323,7 @@ func (v Vector3) Lerp(target Vector3, amount float32) Vector3 {
 
 //Reflect a vector. The mirror normal can be invisioned as a mirror perpendicular to the surface that is hit.
 func (v Vector3) Reflect(mirrorNormal Vector3) Vector3 {
-	return v.Subtract(mirrorNormal.Scale(2)).Scale(v.DotProduct(mirrorNormal))
+	return v.Subtract(mirrorNormal.Scale(2)).Scale(v.Dot(mirrorNormal))
 }
 
 //Rotate rotates the vector
@@ -343,7 +343,7 @@ func (v *Vector3) OrthoNormalize(v2 *Vector3) {
 	v.Y = tmp.Y
 	v.Z = tmp.Z
 
-	tmp = v.CrossProduct(*v2).Normalize().CrossProduct(*v)
+	tmp = v.Cross(*v2).Normalize().Cross(*v)
 	v2.X = tmp.X
 	v2.Y = tmp.Y
 	v2.Z = tmp.Z
@@ -373,11 +373,11 @@ func (v Vector3) Barycenter(a, b, c Vector3) Vector3 {
 	v1 := c.Subtract(a)
 	v2 := v.Subtract(a)
 
-	d00 := v0.DotProduct(v0)
-	d01 := v0.DotProduct(v1)
-	d11 := v1.DotProduct(v1)
-	d20 := v2.DotProduct(v0)
-	d21 := v2.DotProduct(v1)
+	d00 := v0.Dot(v0)
+	d01 := v0.Dot(v1)
+	d11 := v1.Dot(v1)
+	d20 := v2.Dot(v0)
+	d21 := v2.Dot(v1)
 
 	denom := d00*d11 - d01*d01
 	y := (d11*d20 - d01*d21) / denom
@@ -464,8 +464,8 @@ func (v Vector4) SqrLength() float32 {
 	return float32(float64(v.X*v.X) + float64(v.Y*v.Y) + float64(v.Z*v.Z) + float64(v.W*v.W))
 }
 
-//DotProduct of the vector
-func (v Vector4) DotProduct(v2 Vector4) float32 {
+//Dot of the vector
+func (v Vector4) Dot(v2 Vector4) float32 {
 	return v.X*v2.X + v.Y*v2.Y + v.Z*v2.Z + v.W*v2.W
 }
 

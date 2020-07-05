@@ -124,7 +124,7 @@ func (app *FontApp) Render() {
 		app.font = app.fontTTF
 	}
 
-	n.GL.ClearColor(1, 1, 1, 1)
+	//n.GL.ClearColor(1, 1, 1, 1)
 	n.GL.Clear(n.GlColorBufferBit)
 
 	app.renderFont()

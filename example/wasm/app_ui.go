@@ -41,7 +41,7 @@ func (app *UIApp) Start() bool {
 	//n.SetCanvasSize(400, 300)
 
 	//Prepare the image
-image, err := n.LoadImage("resources/tile.png") // The image URL
+	image, err := n.LoadImage("resources/tile.png") // The image URL
 	if err != nil {
 		log.Fatalln("Failed to spawn image", err)
 		return false
@@ -86,7 +86,7 @@ func (app *UIApp) Update(dt float32) {
 
 //Render occurs when the screen needs updating
 func (app *UIApp) Render() {
-	n.GL.ClearColor(1, 1, 1, 1)
+	//n.GL.ClearColor(1, 1, 1, 1)
 	n.GL.Clear(n.GlColorBufferBit)
 
 	app.batch.Begin()
