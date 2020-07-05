@@ -15,17 +15,9 @@ type RotatingCubeApp struct {
 	indexBuffer  n.WebGLBuffer
 	uvBuffer     n.WebGLBuffer
 
-	shader *n.Shader
-
-	uProjMatrixLoc  n.WebGLUniformLocation
-	uViewMatrixLoc  n.WebGLUniformLocation
-	uModelMatrixLoc n.WebGLUniformLocation
-	uSamplerLoc     n.WebGLUniformLocation
-
-	projMatrix  Matrix
-	viewMatrix  Matrix
-	modelMatrix Matrix
-	moveMatrix  Matrix
+	shader      *n.Shader
+	uMatrixLoc  n.WebGLUniformLocation
+	uSamplerLoc n.WebGLUniformLocation
 
 	rotation float32
 	texture  *n.Texture
@@ -50,8 +42,8 @@ func (app *RotatingCubeApp) prepareImage() (*n.Image, error) {
 		}
 	}
 
-	return n.LoadImageRGBA(img)
-	//return n.LoadImage("resources/moomin.png") // The image URL
+	//return n.LoadImageRGBA(img)
+	return n.LoadImage("resources/direction.png") // The image URL
 }
 
 //Start is called by the noodle engine when ready
@@ -72,7 +64,7 @@ func (app *RotatingCubeApp) Start() bool {
 	app.texture = n.NewTexture(image)
 
 	//Load the cube shader
-	shader, err := n.LoadShaderFromURL("resources/shader/rotatingCube.vert", "resources/shader/rotatingCube.frag")
+	shader, err := n.LoadShaderFromURL("resources/shader/flat.vert", "resources/shader/flat.frag")
 	if err != nil {
 		log.Fatalln("Failed to load the shaders! ", err)
 		return false
@@ -81,9 +73,7 @@ func (app *RotatingCubeApp) Start() bool {
 
 	// == Link the shaders up
 	// Associate attributes to vertex shader
-	app.uProjMatrixLoc = app.shader.GetUniformLocation("Pmatrix")
-	app.uViewMatrixLoc = app.shader.GetUniformLocation("Vmatrix")
-	app.uModelMatrixLoc = app.shader.GetUniformLocation("Mmatrix")
+	app.uMatrixLoc = app.shader.GetUniformLocation("n_matrix")
 	app.uSamplerLoc = app.shader.GetUniformLocation("uSampler")
 
 	app.shader.BindVertexData("position", n.GlArrayBuffer, app.vertexBuffer, 3, n.GlFloat, false, 0, 0)
@@ -103,8 +93,6 @@ func (app *RotatingCubeApp) Start() bool {
 	//n.GL.UniformMatrix4fv(app.uProjMatrixLoc, app.projMatrix)
 
 	// Generate and apply view matrix
-	app.viewMatrix = n.NewMatrixLookAt(Vector3{3.0, 3.0, 3.0}, Vector3{0, 0, 0}, Vector3{0, 1, 0})
-	n.GL.UniformMatrix4fv(app.uViewMatrixLoc, app.viewMatrix)
 
 	//Update the texture shit
 	// Activate the text0, tell the texture to bind, then tell the
@@ -115,42 +103,35 @@ func (app *RotatingCubeApp) Start() bool {
 
 //Update occurs once a frame
 func (app *RotatingCubeApp) Update(dt float32) {
-	app.rotation = app.rotation + dt/1
-	app.rotation = 1
-
-	app.moveMatrix = n.NewMatrixTranslate(Vector3{0, 0, 0})
-	/*
-
-		//Update the move matrix
-		axis := Vector3{0, 1, 1}
-		angle := float32(0.5)
-
-			var movMatrix Matrix
-			rota := n.NewQuaternionAxis(axis, angle)
-			rotb := n.NewQuaternionAxis(n.Vector3{0, 0, 1}, 0.3*app.rotation)
-			rotc := n.NewQuaternionAxis(n.Vector3{1, 0, 0}, 0.2*app.rotation)
-
-			movMatrix = n.NewMatrixRotation(rota)
-			movMatrix = movMatrix.Multiply(n.NewMatrixRotation(rotb))
-			movMatrix = movMatrix.Multiply(n.NewMatrixRotation(rotc))
-
-			app.moveMatrix = movMatrix
-	*/
-
 }
 
 //Render occurs when the screen needs updating
 func (app *RotatingCubeApp) Render() {
 
+	const radius = float32(10)
+
 	//Set the clear colour
 	n.GL.ClearColor(n.White)
 
-	//Force the projection matrix to update this frame.
-	app.projMatrix = n.NewMatrixPerspective(45.0, n.GL.AspectRatio(), 1, 100.0)
-	n.GL.UniformMatrix4fv(app.uProjMatrixLoc, app.projMatrix)
+	//Prepare the projection
+	projectionMatrix := n.NewMatrixPerspective(45.0, n.GL.AspectRatio(), 1, 2000.0)
 
-	//Update matrix
-	n.GL.UniformMatrix4fv(app.uModelMatrixLoc, app.moveMatrix)
+	//PRepare the camera
+	cameraAngleRadians := float32(n.GetFrameTime()) * n.PI * 0.5
+	cameraMatrix := n.NewMatrixRotationY(cameraAngleRadians)
+	cameraMatrix = cameraMatrix.Translate(Vector3{0, 0, radius * 1.5})
+	//cameraMatrix := n.NewMatrixTranslate(Vector3{0, 0, radius})
+
+	//Create the new matrix
+	viewMatrix := cameraMatrix.Inverse()
+	viewProjectionMatrix := projectionMatrix.Multiply(viewMatrix)
+
+	//Create the model matrix
+	modelMatrix := n.NewMatrixTranslate(Vector3{0, -2, 0})
+
+	//Set the Unfiform
+	viewProjectionModelMatrix := viewProjectionMatrix.Multiply(modelMatrix)
+	n.GL.UniformMatrix4fv(app.uMatrixLoc, viewProjectionModelMatrix)
 
 	//Clear
 	n.GL.BindBuffer(n.GlElementArrayBuffer, app.indexBuffer)
@@ -162,28 +143,41 @@ func (app *RotatingCubeApp) Render() {
 }
 
 var rotCubeVerts = []Vector3{
-	Vector3{-1, -1, -1}, Vector3{1, -1, -1}, Vector3{1, 1, -1}, Vector3{-1, 1, -1},
-	Vector3{-1, -1, 1}, Vector3{1, -1, 1}, Vector3{1, 1, 1}, Vector3{-1, 1, 1},
-	Vector3{-1, -1, -1}, Vector3{-1, 1, -1}, Vector3{-1, 1, 1}, Vector3{-1, -1, 1},
-	Vector3{1, -1, -1}, Vector3{1, 1, -1}, Vector3{1, 1, 1}, Vector3{1, -1, 1},
-	Vector3{-1, -1, -1}, Vector3{-1, -1, 1}, Vector3{1, -1, 1}, Vector3{1, -1, -1},
-	Vector3{-1, 1, -1}, Vector3{-1, 1, 1}, Vector3{1, 1, 1}, Vector3{1, 1, -1},
+	//Vector3{-1, -1, -1}, Vector3{1, -1, -1}, Vector3{1, 1, -1}, Vector3{-1, 1, -1}, // Back Face
+	Vector3{-1, -1, 1}, Vector3{1, -1, 1}, Vector3{1, 1, 1}, Vector3{-1, 1, 1}, // Front Face
+	//Vector3{-1, -1, -1}, Vector3{-1, 1, -1}, Vector3{-1, 1, 1}, Vector3{-1, -1, 1}, // Left Face
+	Vector3{1, -1, -1}, Vector3{1, 1, -1}, Vector3{1, 1, 1}, Vector3{1, -1, 1}, // Right Face
+	//Vector3{-1, -1, -1}, Vector3{-1, -1, 1}, Vector3{1, -1, 1}, Vector3{1, -1, -1}, // Bottom Face
+	Vector3{-1, 1, -1}, Vector3{-1, 1, 1}, Vector3{1, 1, 1}, Vector3{1, 1, -1}, //Top Face
 }
 var rotCubeUV = []Vector2{
-	Vector2{0.0, 0.0}, Vector2{1.0, 0.0}, Vector2{1.0, 1.0}, Vector2{0.0, 1.0},
-	Vector2{0.0, 0.0}, Vector2{1.0, 0.0}, Vector2{1.0, 1.0}, Vector2{0.0, 1.0},
-	Vector2{0.0, 0.0}, Vector2{1.0, 0.0}, Vector2{1.0, 1.0}, Vector2{0.0, 1.0},
-	Vector2{0.0, 0.0}, Vector2{1.0, 0.0}, Vector2{1.0, 1.0}, Vector2{0.0, 1.0},
-	Vector2{0.0, 0.0}, Vector2{1.0, 0.0}, Vector2{1.0, 1.0}, Vector2{0.0, 1.0},
-	Vector2{0.0, 0.0}, Vector2{1.0, 0.0}, Vector2{1.0, 1.0}, Vector2{0.0, 1.0},
+	//Vector2{0.75, 0.25}, Vector2{1, 0.25}, Vector2{1, 0.0}, Vector2{0.75, 0.0}, //Back
+	Vector2{0.5, 0.25}, Vector2{0.75, 0.25}, Vector2{0.75, 0.0}, Vector2{0.5, 0.0}, //Front
+	//Vector2{0.25, 0.25}, Vector2{0.5, 0.25}, Vector2{0.5, 0}, Vector2{0.25, 0}, //Left
+	Vector2{0, 0.25}, Vector2{0.25, 0.25}, Vector2{0.25, 0}, Vector2{0, 0}, //Right
+	//Vector2{0.0, 0.0}, Vector2{1.0, 0.0}, Vector2{1.0, 1.0}, Vector2{0.0, 1.0}, // Bottom Face
+	Vector2{0.0, 0.0}, Vector2{1.0, 0.0}, Vector2{1.0, 1.0}, Vector2{0.0, 1.0}, // Top Face
 }
 var rotCubeColours = []float32{
-	5, 3, 7, 5, 3, 7, 5, 3, 7, 5, 3, 7,
-	1, 1, 3, 1, 1, 3, 1, 1, 3, 1, 1, 3,
-	0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1,
-	1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
-	1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0,
-	0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,
+
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+
+	/*
+		5, 3, 7, 5, 3, 7, 5, 3, 7, 5, 3, 7,
+		1, 1, 3, 1, 1, 3, 1, 1, 3, 1, 1, 3,
+		0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1,
+		0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1,
+		1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
+		1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0,
+		0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,
+	*/
 }
 var rotCubeTris = []uint16{
 	0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7,
