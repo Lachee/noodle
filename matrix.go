@@ -146,13 +146,11 @@ func (m Matrix) Subtract(right Matrix) Matrix {
 	return Matrix{m1[0] - m2[0], m1[1] - m2[1], m1[2] - m2[2], m1[3] - m2[3], m1[4] - m2[4], m1[5] - m2[5], m1[6] - m2[6], m1[7] - m2[7], m1[8] - m2[8], m1[9] - m2[9], m1[10] - m2[10], m1[11] - m2[11], m1[12] - m2[12], m1[13] - m2[13], m1[14] - m2[14], m1[15] - m2[15]}
 }
 
-/*
-//Scale a matrix
-func (m Matrix) Scale(c float32) Matrix {
+//Multiplyf scales all components of the matrix by c
+func (m Matrix) Multiplyf(c float32) Matrix {
 	m1 := m.DecomposePointer()
 	return Matrix{m1[0] * c, m1[1] * c, m1[2] * c, m1[3] * c, m1[4] * c, m1[5] * c, m1[6] * c, m1[7] * c, m1[8] * c, m1[9] * c, m1[10] * c, m1[11] * c, m1[12] * c, m1[13] * c, m1[14] * c, m1[15] * c}
 }
-*/
 
 //Multiply 2 matrixs together
 func (m Matrix) Multiply(right Matrix) Matrix {
@@ -337,18 +335,6 @@ func (m Matrix) Inverse() Matrix {
 		(tmp_20*m12 + tmp_23*m22 + tmp_17*m02))
 
 	return result
-}
-
-// Obsolete?
-// TransformCoordinate multiplies a 3D vector by a transformation given by
-// the homogeneous 4D matrix m, applying any translation.
-// If this transformation is non-affine, it will project this
-// vector onto the plane w=1 before returning the result.
-func (m Matrix) TransformCoordinate(v Vector3) Vector3 {
-	t := v.ToVector4()
-	t = m.MultiplyVector4(t)
-	t = t.Scale(1 / t.W)
-	return Vector3{t.X, t.Y, t.Z}
 }
 
 //Decompose turns a matrix into an slice of floats
