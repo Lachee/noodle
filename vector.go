@@ -223,21 +223,16 @@ func (v Vector3) SqrLength() float32 {
 
 //Dot of the vector
 func (v Vector3) Dot(v2 Vector3) float32 {
-	return v.X*v2.X + v.Y*v2.Y + v.Z*v2.Z
+	return (v.X * v2.X) + (v.Y * v2.Y) + (v.Z * v2.Z)
 }
 
 //Cross of the vector
 func (v Vector3) Cross(other Vector3) Vector3 {
-	v1 := v.DecomposePointer()
-	v2 := other.DecomposePointer()
-	return Vector3{v1[1]*v2[2] - v1[2]*v2[1], v1[2]*v2[0] - v1[0]*v2[2], v1[0]*v2[1] - v1[1]*v2[0]}
-	/*
-		return Vector3{
-			X: v.Y*v2.Z - v.Z*v2.Y,
-			Y: v.Z*v2.X - v.X*v2.Z,
-			Z: v.X*v2.Y - v.Y*v2.X,
-		}
-	*/
+	return Vector3{
+		v.Y*other.Z - v.Z*other.Y,
+		v.Z*other.X - v.X*other.Z,
+		v.X*other.Y - v.Y*other.X,
+	}
 }
 
 //Perpendicular to this vector

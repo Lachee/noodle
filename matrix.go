@@ -15,7 +15,11 @@ type Matrix struct {
 
 //NewMatrix creates a identity
 func NewMatrix() Matrix {
-	return Matrix{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1}
+	return Matrix{
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		0, 0, 0, 1}
 }
 
 //NewMatrixTranslate creates a new translate matrix
@@ -299,6 +303,7 @@ func (m Matrix) Translate(v Vector3) Matrix {
 func (m Matrix) Inverse() Matrix {
 	result := Matrix{}
 	dst := result.DecomposePointer()
+
 	mm := m.DecomposePointer()
 	var m00 = mm[0*4+0]
 	var m01 = mm[0*4+1]

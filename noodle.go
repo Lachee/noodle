@@ -141,6 +141,10 @@ func Run(application Application) int {
 	})
 	defer onKeyUpEvent.Release()
 
+	//Initial resize
+	width, height := GL.Resize()
+	GL.Viewport(0, 0, width, height)
+
 	//Request a animation frame.
 	frameRenderFunc = js.FuncOf(onRequestAnimationFrame)
 	defer frameRenderFunc.Release()
@@ -180,8 +184,8 @@ func onRequestAnimationFrame(this js.Value, args []js.Value) interface{} {
 	app.Update(float32(deltaTime))
 
 	//Prepare the view port and then render everything
-	width, height := GL.Resize()
-	GL.Viewport(0, 0, width, height)
+	//width, height := GL.Resize()
+	//GL.Viewport(0, 0, width, height)
 
 	//Clear the canvas
 	app.Render()

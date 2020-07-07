@@ -114,20 +114,23 @@ func (app *RotatingCubeApp) Render() {
 	n.GL.ClearColor(n.White)
 
 	//Prepare the projection
-	projectionMatrix := n.NewMatrixPerspective(45.0, n.GL.AspectRatio(), 1, 2000.0)
+	projectionMatrix := n.NewMatrixPerspective(90, n.GL.AspectRatio(), 1, 2000.0)
 
 	//PRepare the camera
-	cameraAngleRadians := float32(n.GetFrameTime()) * n.PI * 0.5
-	cameraMatrix := n.NewMatrixRotationY(cameraAngleRadians)
-	cameraMatrix = cameraMatrix.Translate(Vector3{0, 0, radius * 1.5})
+	//cameraAngleRadians := float32(n.GetFrameTime()) * n.PI * 0.5
+	//cameraMatrix := n.NewMatrixRotationY(cameraAngleRadians)
+	//cameraMatrix = cameraMatrix.Translate(Vector3{0, 0, radius * 1.5})
+
 	//cameraMatrix := n.NewMatrixTranslate(Vector3{0, 0, radius})
 
+	cameraMatrix := n.NewMatrixTranslate(Vector3{0, 0, -3})
+
 	//Create the new matrix
-	viewMatrix := cameraMatrix.Inverse()
+	viewMatrix := cameraMatrix //cameraMatrix.Inverse()
 	viewProjectionMatrix := projectionMatrix.Multiply(viewMatrix)
 
 	//Create the model matrix
-	modelMatrix := n.NewMatrixTranslate(Vector3{0, -2, 0})
+	modelMatrix := n.NewMatrixTranslate(Vector3{0, 0, 0})
 
 	//Set the Unfiform
 	viewProjectionModelMatrix := viewProjectionMatrix.Multiply(modelMatrix)
