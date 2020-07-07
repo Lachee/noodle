@@ -281,6 +281,12 @@ func (v Vector3) Multiply(v2 Vector3) Vector3 {
 	return Vector3{X: v.X * v2.X, Y: v.Y * v2.Y, Z: v.Z * v2.Z}
 }
 
+//MultiplyMatrix is v * matrix
+func (v Vector3) MultiplyMatrix(matrix Matrix) Vector3 {
+	r := Vector4{v.X, v.Y, v.Z, 1}.MultiplyMatrix(matrix)
+	return Vector3{r.X, r.Y, r.Z}
+}
+
 //Negate or Inverts a vector
 func (v Vector3) Negate() Vector3 {
 	return Vector3{X: -v.X, Y: -v.Y, Z: -v.Z}
@@ -298,13 +304,15 @@ func (v Vector3) DivideV(v2 Vector3) Vector3 {
 
 //Normalize a vector
 func (v Vector3) Normalize() Vector3 {
+
+	//Get the length, if its 0 then return 0
 	length := v.Length()
 	if length == 0 {
-		length = 1
+		return Vector3{}
 	}
 
-	ilength := 1 / length
-	return v.Scale(ilength)
+	//Return the normalized vector
+	return Vector3{v.X / length, v.Y / length, v.Z / length}
 }
 
 //Lerp a vector towards another vector
@@ -432,6 +440,23 @@ func (v Vector4) Scale(scale float32) Vector4 {
 //Multiply a vector by another vector
 func (v Vector4) Multiply(v2 Vector4) Vector4 {
 	return Vector4{X: v.X * v2.X, Y: v.Y * v2.Y, Z: v.Z * v2.Z, W: v.W * v2.W}
+}
+
+//MultiplyMatrix is v * m
+// source https://webglfundamentals.org/webgl/lessons/webgl-3d-camera.html
+// its still using array mathmatics
+func (v Vector4) MultiplyMatrix(matrix Matrix) Vector4 {
+	var dst [4]float32
+	mm := matrix.DecomposePointer()
+	vv := v.DecomposePointer()
+
+	for i := 0; i < 4; i++ {
+		dst[i] = 0.0
+		for j := 0; j < 4; j++ {
+			dst[i] += vv[j] * mm[j*4+i]
+		}
+	}
+	return Vector4{dst[0], dst[1], dst[2], dst[3]}
 }
 
 //Divide  a vector by a value (v / d)

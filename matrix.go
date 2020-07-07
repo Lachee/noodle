@@ -116,46 +116,15 @@ func NewMatrixFrustum(left, right, bottom, top, near, far float32) Matrix {
 
 //NewMatrixLookAt creates a matrix to look at a target
 func NewMatrixLookAt(eye, target, up Vector3) Matrix {
-	var zAxis = eye.Subtract(target).Normalize()
-	var xAxis = up.Cross(zAxis).Normalize()
-	var yAxis = zAxis.Cross(xAxis).Normalize()
-
-	result := Matrix{}
-	dst := result.DecomposePointer()
-
-	dst[0] = xAxis.X
-	dst[1] = xAxis.Y
-	dst[2] = xAxis.Z
-	dst[3] = 0
-	dst[4] = yAxis.X
-	dst[5] = yAxis.Y
-	dst[6] = yAxis.Z
-	dst[7] = 0
-	dst[8] = zAxis.X
-	dst[9] = zAxis.Y
-	dst[10] = zAxis.Z
-	dst[11] = 0
-	dst[12] = eye.X
-	dst[13] = eye.Y
-	dst[14] = eye.Z
-	dst[15] = 1
-
-	return result
-
-	/*
-		f := target.Subtract(eye).Normalize()
-		s := f.Cross(up.Normalize()).Normalize()
-		u := s.Cross(f)
-
-		M := Matrix{
-			s.X, u.X, -f.X, 0,
-			s.Y, u.Y, -f.Y, 0,
-			s.Z, u.Z, -f.Z, 0,
-			0, 0, 0, 1,
-		}
-
-		return M.Multiply(NewMatrixTranslate(Vector3{float32(-eye.X), float32(-eye.Y), float32(-eye.Z)}))
-	*/
+	var zAxis = eye.Subtract(target).Normalize() //Local Z Direction
+	var xAxis = up.Cross(zAxis).Normalize()      //Local X Direction
+	var yAxis = zAxis.Cross(xAxis).Normalize()   //Local Y Direction
+	return Matrix{
+		xAxis.X, xAxis.Y, xAxis.Z, 0,
+		yAxis.X, yAxis.Y, yAxis.Z, 0,
+		zAxis.X, zAxis.Y, zAxis.Z, 0,
+		eye.X, eye.Y, eye.Z, 1, //Translate it
+	}
 }
 
 //Trace of the matrix (sum of values along diagonal)

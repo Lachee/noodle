@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"math"
 
 	n "github.com/lachee/noodle"
 )
@@ -15,6 +16,8 @@ type AxisTestApp struct {
 	positionAttribute n.WebGLAttributeLocation
 	colorAttribute    n.WebGLAttributeLocation
 	matrixLocation    n.WebGLUniformLocation
+
+	cameraAngleRadians float32
 }
 
 //Start is called by the noodle engine when ready
@@ -45,14 +48,18 @@ func (app *AxisTestApp) Start() bool {
 
 //Update occurs once a frame
 func (app *AxisTestApp) Update(dt float32) {
+	app.cameraAngleRadians += dt * 0.01 * 100
 }
 
 //Render occurs when the screen needs updating
 func (app *AxisTestApp) Render() {
 
-	translation := Vector3{-150, 0, -360}
-	rotation := Vector3{190, 40, 320}
-	scale := Vector3{1, 1, 1}
+	//translation := Vector3{-150, 0, -360}
+	//rotation := Vector3{190, 40, 320}
+	//scale := Vector3{1, 1, 1}
+
+	var numFs int = 5
+	var radius float32 = 200
 
 	//Clearing and Shader
 	n.GL.Clear(n.GlColorBufferBit | n.GlDepthBufferBit)
@@ -69,22 +76,54 @@ func (app *AxisTestApp) Render() {
 	n.GL.BindBuffer(n.GlArrayBuffer, app.colorBuffer)
 	n.GL.VertexAttribPointer(app.colorAttribute, 3, n.GlUnsignedByte, true, 0, 0)
 
-	//Matrix
-	matrix := n.NewMatrixPerspective(60, n.GL.AspectRatio(), 1, 2000)
-	matrix = matrix.Translate(translation)
-	matrix = matrix.RotateX(rotation.X * n.Deg2Rad)
-	matrix = matrix.RotateY(rotation.Y * n.Deg2Rad)
-	matrix = matrix.RotateZ(rotation.Z * n.Deg2Rad)
-	matrix = matrix.Scale(scale)
-	n.GL.UniformMatrix4fv(app.matrixLocation, matrix)
+	//Perspective
+	projectionMatrix := n.NewMatrixPerspective(60, n.GL.AspectRatio(), 1, 2000)
 
+	//Move the camera around the circle to get the position it should be at
+	cameraMatrix := n.NewMatrixRotationY(app.cameraAngleRadians)
+	cameraMatrix = cameraMatrix.Translate(Vector3{0, 0, radius * 1.5})
+
+	//Get the traslate from that movement
+	cameraPosition := Vector3{cameraMatrix.M12, cameraMatrix.M13, cameraMatrix.M14}
+	up := Vector3{0, 1, 0}
+	fPosition := Vector3{radius, 0, 0}
+
+	//Compute the camera matrix using the look at now
+	cameraMatrix = n.NewMatrixLookAt(cameraPosition, fPosition, up)
+
+	//View
+	viewMatrix := cameraMatrix.Inverse()
+	viewProjectionMatrix := projectionMatrix.Multiply(viewMatrix)
+
+	//Draw the Fs
+	for ii := 0; ii < numFs; ii++ {
+		angle := float64(ii) * math.Pi * 2 / float64(numFs)
+		x := math.Cos(angle) * float64(radius)
+		y := math.Sin(angle) * float64(radius)
+
+		matrix := viewProjectionMatrix.Translate(n.NewVector3d(x, 0, y))
+		n.GL.UniformMatrix4fv(app.matrixLocation, matrix)
+		n.GL.DrawArrays(n.GlTriangles, 0, 16*6)
+
+	}
+
+	//Matrix
+	/*
+		matrix := n.NewMatrixPerspective(60, n.GL.AspectRatio(), 1, 2000)
+		matrix = matrix.Translate(translation)
+		matrix = matrix.RotateX(rotation.X * n.Deg2Rad)
+		matrix = matrix.RotateY(rotation.Y * n.Deg2Rad)
+		matrix = matrix.RotateZ(rotation.Z * n.Deg2Rad)
+		matrix = matrix.Scale(scale)
+		n.GL.UniformMatrix4fv(app.matrixLocation, matrix)
+	*/
 	//Drawing
-	n.GL.DrawArrays(n.GlTriangles, 0, 16*6)
+	//n.GL.DrawArrays(n.GlTriangles, 0, 16*6)
 }
 
 //setGeometry fills the buffer with the F values
 func (app *AxisTestApp) setGeometry() {
-	n.GL.BufferData(n.GlArrayBuffer, []float32{
+	positions := []float32{
 		// left column front
 		0, 0, 0,
 		0, 150, 0,
@@ -212,7 +251,26 @@ func (app *AxisTestApp) setGeometry() {
 		0, 0, 0,
 		0, 150, 30,
 		0, 150, 0,
-	}, n.GlStaticDraw)
+	}
+
+	// Center the F around the origin and Flip it around. We do this because
+	// we're in 3D now with and +Y is up where as before when we started with 2D
+	// we had +Y as down.
+
+	// We could do by changing all the values above but I'm lazy.
+	// We could also do it with a matrix at draw time but you should
+	// never do stuff at draw time if you can do it at init time.
+	matrix := n.NewMatrixRotationX(n.PI)
+	matrix = matrix.Translate(Vector3{-50, -75, -15})
+	for ii := 0; ii < len(positions); ii += 3 {
+		pos := Vector3{positions[ii+0], positions[ii+1], positions[ii+2]}
+		vector := pos.MultiplyMatrix(matrix)
+		positions[ii+0] = vector.X
+		positions[ii+1] = vector.Y
+		positions[ii+2] = vector.Z
+	}
+
+	n.GL.BufferData(n.GlArrayBuffer, positions, n.GlStaticDraw)
 }
 
 //setColors Fill the buffer with colors for the 'F'.
