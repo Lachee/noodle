@@ -278,6 +278,11 @@ func (gl *WebGL) DrawElements(mode GLEnum, count int, valueType GLEnum, offset i
 	gl.context.Call("drawElements", mode, count, valueType, offset)
 }
 
+//DrawArrays renders primitives from array data.
+func (gl *WebGL) DrawArrays(mode GLEnum, first int, count int) {
+	gl.context.Call("drawArrays", mode, first, count)
+}
+
 //CreateTexture creates a new texture on the GPU
 func (gl *WebGL) CreateTexture() WebGLTexture {
 	return gl.context.Call("createTexture")
@@ -371,6 +376,7 @@ func (gl *WebGL) Uniform2v(location WebGLUniformLocation, value Vector2) {
 }
 
 //UniformMatrix4fv specify matrix values for uniform variables.
+// Transpose is excluded as it always has to be false anyways.
 func (gl *WebGL) UniformMatrix4fv(location WebGLUniformLocation, matrix Matrix) {
 	buffer := matrix.DecomposePointer()
 	typedBuffer := sliceToTypedArray([]float32((*buffer)[:]))

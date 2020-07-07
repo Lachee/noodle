@@ -184,8 +184,8 @@ func onRequestAnimationFrame(this js.Value, args []js.Value) interface{} {
 	app.Update(float32(deltaTime))
 
 	//Prepare the view port and then render everything
-	//width, height := GL.Resize()
-	//GL.Viewport(0, 0, width, height)
+	width, height := GL.Resize()
+	GL.Viewport(0, 0, width, height)
 
 	//Clear the canvas
 	app.Render()

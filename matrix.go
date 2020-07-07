@@ -177,11 +177,13 @@ func (m Matrix) Subtract(right Matrix) Matrix {
 	return Matrix{m1[0] - m2[0], m1[1] - m2[1], m1[2] - m2[2], m1[3] - m2[3], m1[4] - m2[4], m1[5] - m2[5], m1[6] - m2[6], m1[7] - m2[7], m1[8] - m2[8], m1[9] - m2[9], m1[10] - m2[10], m1[11] - m2[11], m1[12] - m2[12], m1[13] - m2[13], m1[14] - m2[14], m1[15] - m2[15]}
 }
 
+/*
 //Scale a matrix
 func (m Matrix) Scale(c float32) Matrix {
 	m1 := m.DecomposePointer()
 	return Matrix{m1[0] * c, m1[1] * c, m1[2] * c, m1[3] * c, m1[4] * c, m1[5] * c, m1[6] * c, m1[7] * c, m1[8] * c, m1[9] * c, m1[10] * c, m1[11] * c, m1[12] * c, m1[13] * c, m1[14] * c, m1[15] * c}
 }
+*/
 
 //Multiply 2 matrixs together
 func (m Matrix) Multiply(right Matrix) Matrix {
@@ -255,48 +257,27 @@ func (m Matrix) MultiplyVector4(v Vector4) Vector4 {
 
 //Translate the given matrix by the given vector. m * v
 func (m Matrix) Translate(v Vector3) Matrix {
-	result := Matrix{}
-	dst := result.DecomposePointer()
-	mm := m.DecomposePointer()
-	var v0 = v.X
-	var v1 = v.Y
-	var v2 = v.Z
-	var m00 = mm[0]
-	var m01 = mm[1]
-	var m02 = mm[2]
-	var m03 = mm[3]
-	var m10 = mm[1*4+0]
-	var m11 = mm[1*4+1]
-	var m12 = mm[1*4+2]
-	var m13 = mm[1*4+3]
-	var m20 = mm[2*4+0]
-	var m21 = mm[2*4+1]
-	var m22 = mm[2*4+2]
-	var m23 = mm[2*4+3]
-	var m30 = mm[3*4+0]
-	var m31 = mm[3*4+1]
-	var m32 = mm[3*4+2]
-	var m33 = mm[3*4+3]
+	return m.Multiply(NewMatrixTranslate(v))
+}
 
-	dst[0] = m00
-	dst[1] = m01
-	dst[2] = m02
-	dst[3] = m03
-	dst[4] = m10
-	dst[5] = m11
-	dst[6] = m12
-	dst[7] = m13
-	dst[8] = m20
-	dst[9] = m21
-	dst[10] = m22
-	dst[11] = m23
+//RotateX rotates the matrix
+func (m Matrix) RotateX(radians float32) Matrix {
+	return m.Multiply(NewMatrixRotationX(radians))
+}
 
-	dst[12] = m00*v0 + m10*v1 + m20*v2 + m30
-	dst[13] = m01*v0 + m11*v1 + m21*v2 + m31
-	dst[14] = m02*v0 + m12*v1 + m22*v2 + m32
-	dst[15] = m03*v0 + m13*v1 + m23*v2 + m33
+//RotateY rotates the matrix
+func (m Matrix) RotateY(radians float32) Matrix {
+	return m.Multiply(NewMatrixRotationY(radians))
+}
 
-	return result
+//RotateZ rotates the matrix
+func (m Matrix) RotateZ(radians float32) Matrix {
+	return m.Multiply(NewMatrixRotationZ(radians))
+}
+
+//Scale the given matrix
+func (m Matrix) Scale(s Vector3) Matrix {
+	return m.Multiply(NewMatrixScale(s))
 }
 
 //Inverse the matrix

@@ -11,11 +11,12 @@ import (
 func main() {
 	var app noodle.Application
 
-	app = &RotatingCubeApp{}
+	//app = &RotatingCubeApp{}
 	//app = &SpriteApp{}
 	//app = &UIApp{}
 	//app = &NineSliceApp{}
 	//app = &FontApp{}
+	app = &AxisTestApp{}
 
 	//This is blocking. Everything after this happens in the application
 	// It will return an exit code
