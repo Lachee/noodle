@@ -1,274 +1,259 @@
 package noodle
 
 import (
+	"log"
 	"math"
-	"unsafe"
 )
 
-/*
-Copyright (c) 2020 Lachee
-Copyright ©2013 The go-gl Authors. All rights reserved.
-*/
-
+//Sources:
+//https://github.com/mrdoob/three.js/blob/dev/src/math/Quaternion.js
 //https://github.com/raysan5/raylib/blob/master/src/raymath.h
 //https://github.com/go-gl/mathgl/blob/master/mgl32/quat.go
 
+//EulerOrder the ordering of the euler angles
+type EulerOrder uint8
+
+const (
+	//OrderXYZ of the quaternion
+	OrderXYZ EulerOrder = iota
+	//OrderYXZ of the quaternion
+	OrderYXZ
+	//OrderZXY of the quaternion
+	OrderZXY
+	//OrderZYX of the quaternion
+	OrderZYX
+	//OrderYZX of the quaternion
+	OrderYZX
+	//OrderXZY of the quaternion
+	OrderXZY
+)
+
+//QuaternionOrdering defines the Euler Order that will be used when reading in and out Euler Angles. Modifying this will change the behaviour of many functions.
+var QuaternionOrdering = OrderXYZ
+
 //Quaternion A represntation of rotations that does not suffer from gimbal lock
+//Based of THREE.JS implementation
+//https://github.com/mrdoob/three.js/blob/dev/src/math/Quaternion.js
 type Quaternion Vector4
 
 //NewQuaternionIdentity creates a Quaternion Identity (a blank quaternion)
 func NewQuaternionIdentity() Quaternion { return Quaternion{X: 0, Y: 0, Z: 0, W: 1} }
 
-//NewQuaternionEuler creates a quaternion from Euler Angles
-func NewQuaternionEuler(theta Vector3) Quaternion {
-	var q Quaternion
-	cosz2 := float32(math.Cos(0.5 * float64(theta.Z)))
-	cosy2 := float32(math.Cos(0.5 * float64(theta.Y)))
-	cosx2 := float32(math.Cos(0.5 * float64(theta.X)))
+//NewQuaternionEulerAngle creates a new quaternion from the euler and the current QuaternionOrdering
+func NewQuaternionEulerAngle(euler Vector3) Quaternion {
+	x, y, z := euler.X, euler.Y, euler.Z
 
-	sinz2 := float32(math.Sin(0.5 * float64(theta.Z)))
-	siny2 := float32(math.Sin(0.5 * float64(theta.Y)))
-	sinx2 := float32(math.Sin(0.5 * float64(theta.X)))
+	c1 := float32(math.Cos(float64(x / 2)))
+	c2 := float32(math.Cos(float64(y / 2)))
+	c3 := float32(math.Cos(float64(z / 2)))
 
-	// and now compute Quaternion
-	q.W = cosz2*cosy2*cosx2 + sinz2*siny2*sinx2
-	q.X = cosz2*cosy2*sinx2 - sinz2*siny2*cosx2
-	q.Y = cosz2*siny2*cosx2 + sinz2*cosy2*sinx2
-	q.Z = sinz2*cosy2*cosx2 - cosz2*siny2*sinx2
-	return q
-}
+	s1 := float32(math.Sin(float64(x / 2)))
+	s2 := float32(math.Sin(float64(y / 2)))
+	s3 := float32(math.Sin(float64(z / 2)))
 
-// NewQuaternionAxis creates an angle from an axis and an angle relative to that axis in radians.
-func NewQuaternionAxis(axis Vector3, angle float32) Quaternion {
-	// angle = (float32(math.Pi) * angle) / 180.0
-
-	c, s := float32(math.Cos(float64(angle/2))), float32(math.Sin(float64(angle/2)))
-	return Quaternion{axis.X * s, axis.Y * s, axis.Z * s, c}
-}
-
-// NewQuaternionAngle calculates the rotation between two vectors
-func NewQuaternionAngle(start, dest Vector3) Quaternion {
-	const epsilon = float32(0.001)
-
-	// http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-17-quaternions/#I_need_an_equivalent_of_gluLookAt__How_do_I_orient_an_object_towards_a_point__
-	// https://github.com/g-truc/glm/blob/0.9.5/glm/gtx/quaternion.inl#L225
-	// https://bitbucket.org/sinbad/ogre/src/d2ef494c4a2f5d6e2f0f17d3bfb9fd936d5423bb/OgreMain/include/OgreVector3.h?at=default#cl-654
-
-	start = start.Normalize()
-	dest = dest.Normalize()
-
-	cosTheta := start.Dot(dest)
-	if cosTheta < -1.0+epsilon {
-		// special case when vectors in opposite directions:
-		// there is no "ideal" rotation axis
-		// So guess one; any will do as long as it's perpendicular to start
-		axis := Vector3{1, 0, 0}.Cross(start)
-		if axis.Dot(axis) < epsilon {
-			// bad luck, they were parallel, try again!
-			axis = Vector3{0, 1, 0}.Cross(start)
-		}
-
-		return NewQuaternionAxis(axis.Normalize(), math.Pi)
+	result := Quaternion{0, 0, 0, 1}
+	switch QuaternionOrdering {
+	case OrderXYZ:
+		result.X = s1*c2*c3 + c1*s2*s3
+		result.Y = c1*s2*c3 - s1*c2*s3
+		result.Z = c1*c2*s3 + s1*s2*c3
+		result.W = c1*c2*c3 - s1*s2*s3
+		break
+	case OrderYXZ:
+		result.X = s1*c2*c3 + c1*s2*s3
+		result.Y = c1*s2*c3 - s1*c2*s3
+		result.Z = c1*c2*s3 - s1*s2*c3
+		result.W = c1*c2*c3 + s1*s2*s3
+		break
+	case OrderZXY:
+		result.X = s1*c2*c3 - c1*s2*s3
+		result.Y = c1*s2*c3 + s1*c2*s3
+		result.Z = c1*c2*s3 + s1*s2*c3
+		result.W = c1*c2*c3 - s1*s2*s3
+		break
+	case OrderZYX:
+		result.X = s1*c2*c3 - c1*s2*s3
+		result.Y = c1*s2*c3 + s1*c2*s3
+		result.Z = c1*c2*s3 - s1*s2*c3
+		result.W = c1*c2*c3 + s1*s2*s3
+		break
+	case OrderYZX:
+		result.X = s1*c2*c3 + c1*s2*s3
+		result.Y = c1*s2*c3 + s1*c2*s3
+		result.Z = c1*c2*s3 - s1*s2*c3
+		result.W = c1*c2*c3 - s1*s2*s3
+		break
+	case OrderXZY:
+		result.X = s1*c2*c3 - c1*s2*s3
+		result.Y = c1*s2*c3 - s1*c2*s3
+		result.Z = c1*c2*s3 + s1*s2*c3
+		result.W = c1*c2*c3 + s1*s2*s3
+		break
+	default:
+		log.Fatalln("invalid quaternion ordering supplied.")
+		break
 	}
 
-	axis := start.Cross(dest)
-	s := float32(math.Sqrt(float64(1.0+cosTheta) * 2.0))
-	v := axis.Scale(1.0 / s)
-	return Quaternion{v.X, v.Y, v.Z, s * 0.5}
+	return result
 }
 
-//NewQuaternionLookAt creates a rotation from the eye vector to the center vector.
-func NewQuaternionLookAt(eye, center, up Vector3) Quaternion {
-	direction := center.Subtract(eye).Normalize()
-	rotDir := NewQuaternionAngle(Vector3{0, 0, 1}, direction)
-
-	//Force the up
-	right := direction.Cross(up)
-	up = right.Cross(direction)
-
-	// Recompute up so that it's perpendicular to the direction
-	// You can skip that part if you really want to force up
-	upCur := rotDir.Rotate(Vector3{0, 1, 0})
-	rotUp := NewQuaternionAngle(upCur, up)
-
-	rotTarget := rotUp.Multiply(rotDir)
-	return rotTarget.Inverse()
+//NewQuaternionAxisAngle creates a new quaternion that is the axis rotated by the angle (in radians)
+func NewQuaternionAxisAngle(axis Vector3, angle float32) Quaternion {
+	s := float32(math.Sin(float64(angle / 2)))
+	return Quaternion{
+		X: axis.X * s,
+		Y: axis.Y * s,
+		Z: axis.Z * s,
+		W: float32(math.Cos(float64(angle))),
+	}
 }
 
-//Add two quaternions (q1 + q2)
-func (q Quaternion) Add(q2 Quaternion) Quaternion {
-	return Quaternion{X: q.X + q2.X, Y: q.Y + q2.Y, Z: q.Z + q2.Z, W: q.W + q2.W}
+//NewQuaternionRotationMatrix creates a quaternion from the rotation component of a given matrix
+func NewQuaternionRotationMatrix(matrix Matrix) Quaternion {
+	te := matrix.DecomposePointer()
+	m11 := te[0]
+	m21 := te[1]
+	m31 := te[2]
+	m12 := te[4]
+	m22 := te[5]
+	m32 := te[6]
+	m13 := te[8]
+	m23 := te[9]
+	m33 := te[10]
+	trace := m11 + m22 + m33
+
+	result := Quaternion{0, 0, 0, 1}
+	if trace > 0 {
+
+		s := 0.5 / float32(math.Sqrt(float64(trace+1.0)))
+
+		result.W = 0.25 / s
+		result.X = (m32 - m23) * s
+		result.Y = (m13 - m31) * s
+		result.Z = (m21 - m12) * s
+
+	} else if m11 > m22 && m11 > m33 {
+
+		s := 2.0 * float32(math.Sqrt(float64(1.0+m11-m22-m33)))
+
+		result.W = (m32 - m23) / s
+		result.X = 0.25 * s
+		result.Y = (m12 + m21) / s
+		result.Z = (m13 + m31) / s
+
+	} else if m22 > m33 {
+
+		s := 2.0 * float32(math.Sqrt(float64(1.0+m22-m11-m33)))
+
+		result.W = (m13 - m31) / s
+		result.X = (m12 + m21) / s
+		result.Y = 0.25 * s
+		result.Z = (m23 + m32) / s
+
+	} else {
+
+		s := 2.0 * float32(math.Sqrt(float64(1.0+m33-m11-m22)))
+
+		result.W = (m21 - m12) / s
+		result.X = (m13 + m31) / s
+		result.Y = (m23 + m32) / s
+		result.Z = 0.25 * s
+	}
+
+	return result
 }
 
-//Subtract two quaternions (q1 - q2)
-func (q Quaternion) Subtract(q2 Quaternion) Quaternion {
-	return Quaternion{X: q.X - q2.X, Y: q.Y - q2.Y, Z: q.Z - q2.Z, W: q.W - q2.W}
+//NewQuaternionUnitVectors creates a quaternion that is the angle between the two unit vectors.
+func NewQuaternionUnitVectors(from, to Vector3) Quaternion {
+	const EPS = 0.000001
+
+	r := from.Dot(to) + 1
+	result := Quaternion{0, 0, 0, 1}
+	if r < EPS {
+		r = 0
+		if math.Abs(float64(from.X)) > math.Abs(float64(to.Z)) {
+
+			result.X = -from.Y
+			result.Y = from.X
+			result.Z = 0
+			result.W = r
+
+		} else {
+
+			result.X = 0
+			result.Y = -from.Z
+			result.Z = from.Y
+			result.W = r
+
+		}
+
+	} else {
+		result.X = from.Y*to.Z - from.Z*to.Y
+		result.Y = from.Z*to.X - from.X*to.Z
+		result.Z = from.X*to.Y - from.Y*to.X
+		result.W = r
+
+	}
+	log.Fatalln("not implemented")
+	return result
+	//TODO: Implement Normalise
+	//return result.Normalize()
 }
 
-//Multiply two quaternions together
-func (q Quaternion) Multiply(q2 Quaternion) Quaternion {
-	q1V := Vector3{q.X, q.Y, q.Z}
-	q2V := Vector3{q2.X, q2.Y, q2.Z}
-	v := q1V.Cross(q2V).Add(q2V.Scale(q.W)).Add(q1V.Scale(q2.W))
-	return Quaternion{v.X, v.Y, v.Z, q.W*q2.W - q1V.Dot(q2V)}
-}
-
-//Conjugate the quaternion (invert)
-func (q Quaternion) Conjugate() Quaternion {
-	return Quaternion{X: -q.X, Y: -q.Y, Z: -q.Z, W: q.W}
-}
+//- angleTo
+//- roatateTwoards
 
 //Inverse the quaternion
 func (q Quaternion) Inverse() Quaternion {
-	return q.Conjugate().Scale(1 / q.Dot(q))
+	//TODO: Implement this. It assumes its a unit length, but i dont trust it.
+	return q.Conjugate()
 }
 
-// Rotate a vector by the rotation this quaternion represents.
-// This will result in a 3D vector. Strictly speaking, this is
-// equivalent to q1.v.q* where the "."" is quaternion multiplication and v is interpreted
-// as a quaternion with W 0 and V v. In code:
-// q1.Mul(Quat{0,v}).Mul(q1.Conjugate()), and
-// then retrieving the imaginary (vector) part.
-//
-// In practice, we hand-compute this in the general case and simplify
-// to save a few operations.
-func (q Quaternion) Rotate(v Vector3) Vector3 {
-	q1V := Vector3{q.X, q.Y, q.Z}
-	cross := q1V.Cross(v)
-	return v.Add(cross.Scale(2 * q.W)).Add(q1V.Scale(2).Cross(cross))
+//Conjugate the quaternion
+func (q Quaternion) Conjugate() Quaternion {
+	return Quaternion{-q.X, -q.Y, -q.Z, q.W}
 }
 
-//ToMatrix is an alias of NewMatrixRotation
-func (q Quaternion) ToMatrix() Matrix { return NewMatrixRotation(q) }
-
-// Dot product between two quaternions, equivalent to if this was a Vec4.
-func (q Quaternion) Dot(q2 Quaternion) float32 {
-	return q.W*q2.W + q.X*q2.X + q.Y*q2.Y + q.Z*q2.Z
-}
-
-//Scale the quaternion (q * scale)
-func (q Quaternion) Scale(scale float32) Quaternion {
-	return Quaternion{X: q.X * scale, Y: q.Y * scale, Z: q.Z * scale, W: q.W * scale}
-}
-
-//Length of the quaternion
+//Length of the Quaternion
 func (q Quaternion) Length() float32 {
 	return float32(math.Sqrt(float64(q.X*q.X) + float64(q.Y*q.Y) + float64(q.Z*q.Z) + float64(q.W*q.W)))
 }
 
-//SqrLength of the quaternion
+//SqrLength is the squared length of the Quaternion
 func (q Quaternion) SqrLength() float32 {
-	return float32((float64(q.X*q.X) + float64(q.Y*q.Y) + float64(q.Z*q.Z) + float64(q.W*q.W)))
+	return float32(float64(q.X*q.X) + float64(q.Y*q.Y) + float64(q.Z*q.Z) + float64(q.W*q.W))
 }
 
-// Normalize the quaternion, returning its versor (unit quaternion).
-// This is the same as normalizing it as a Vec4.
+//Dot of the Quaternion
+func (q Quaternion) Dot(q2 Quaternion) float32 {
+	return q.X*q2.X + q.Y*q2.Y + q.Z*q2.Z + q.W*q2.W
+}
+
+//Normalize a Quaternion
 func (q Quaternion) Normalize() Quaternion {
-	length := q.Length()
-	if length == 0 {
-		length = 1
+	l := q.Length()
+	if l == 0 {
+		return Quaternion{0, 0, 0, 1}
 	}
 
-	ilength := 1 / length
-	return q.Scale(ilength)
+	l = 1 / l
+	return Quaternion{
+		q.X * l,
+		q.Y * l,
+		q.Z * l,
+		q.W * l,
+	}
 }
 
-//Decompose the Vector into a new slice of floats.
-func (q Quaternion) Decompose() []float32 { return []float32{q.X, q.Y, q.Z, q.W} }
+//Multiply two quaternions toegether
+func (q Quaternion) Multiply(q2 Quaternion) Quaternion {
+	qax, qay, qaz, qaw := q.X, q.Y, q.Z, q.W
+	qbx, qby, qbz, qbw := q2.X, q2.Y, q2.Z, q2.W
 
-//DecomposePointer the vector into a slice of floats
-func (q Quaternion) DecomposePointer() *[4]float32 { return (*[4]float32)(unsafe.Pointer(&q)) }
-
-// QuatSlerp is *S*pherical *L*inear Int*erp*olation, a method of interpolating
-// between two quaternions. This always takes the straightest path on the sphere between
-// the two quaternions, and maintains constant velocity.
-//
-// However, it's expensive and QuatSlerp(q1,q2) is not the same as QuatSlerp(q2,q1)
-func QuaternionSlerp(q1, q2 Quaternion, amount float32) Quaternion {
-	q1, q2 = q1.Normalize(), q2.Normalize()
-	dot := q1.Dot(q2)
-
-	// If the inputs are too close for comfort, linearly interpolate and normalize the result.
-	if dot > 0.9995 {
-		return QuaternionLerp(q1, q2, amount).Normalize()
-	}
-
-	// This is here for precision errors, I'm perfectly aware that *technically* the dot is bound [-1,1], but since Acos will freak out if it's not (even if it's just a liiiiitle bit over due to normal error) we need to clamp it
-	dot = Clamp32(dot, -1, 1)
-
-	theta := float32(math.Acos(float64(dot))) * amount
-	c, s := float32(math.Cos(float64(theta))), float32(math.Sin(float64(theta)))
-	rel := q2.Subtract(q1.Scale(dot)).Normalize()
-
-	return q1.Scale(c).Add(rel.Scale(s))
+	result := Quaternion{0, 0, 0, 1}
+	result.X = qax*qbw + qaw*qbx + qay*qbz - qaz*qby
+	result.Y = qay*qbw + qaw*qby + qaz*qbx - qax*qbz
+	result.Z = qaz*qbw + qaw*qbz + qax*qby - qay*qbx
+	result.W = qaw*qbw - qax*qbx - qay*qby - qaz*qbz
+	return result
 }
-
-// QuatLerp is a *L*inear Int*erp*olation between two Quaternions, cheap and simple.
-//
-// Not excessively useful, but uses can be found.
-func QuaternionLerp(q1, q2 Quaternion, amount float32) Quaternion {
-	return q1.Add(q2.Subtract(q1).Scale(amount))
-}
-
-/*
-
-//NewQuaternionLookRotation looks at a point
-// https://answers.unity.com/questions/467614/what-is-the-source-code-of-quaternionlookrotation.html
-func newQuaternionLookRotation(forward, up Vector3) Quaternion {
-	var quaternion = NewQuaternionIdentity()
-
-	v := forward.Normalize()
-	v2 := up.Cross(v).Normalize()
-	v3 := v.Cross(v2)
-
-	var m00 = v2.X
-	var m01 = v2.Y
-	var m02 = v2.Z
-	var m10 = v3.X
-	var m11 = v3.Y
-	var m12 = v3.Z
-	var m20 = v.X
-	var m21 = v.Y
-	var m22 = v.Z
-
-	num8 := (m00 + m11) + m22
-
-	if num8 > 0 {
-		num := float32(math.Sqrt(float64(num8) + 1.0))
-		quaternion.W = num * 0.5
-		num = 0.5 / num
-		quaternion.X = (m12 - m21) * num
-		quaternion.Y = (m20 - m02) * num
-		quaternion.Z = (m01 - m10) * num
-		return quaternion
-	}
-
-	if (m00 >= m11) && (m00 >= m22) {
-		var num7 = float32(math.Sqrt(float64(((1.0 + m00) - m11) - m22)))
-		var num4 = 0.5 / num7
-		quaternion.X = 0.5 * num7
-		quaternion.Y = (m01 + m10) * num4
-		quaternion.Z = (m02 + m20) * num4
-		quaternion.W = (m12 - m21) * num4
-		return quaternion
-	}
-
-	if m11 > m22 {
-		var num6 = float32(math.Sqrt(float64(((1 + m11) - m00) - m22)))
-		var num3 = 0.5 / num6
-		quaternion.X = (m10 + m01) * num3
-		quaternion.Y = 0.5 * num6
-		quaternion.Z = (m21 + m12) * num3
-		quaternion.W = (m20 - m02) * num3
-		return quaternion
-	}
-
-	var num5 = float32(math.Sqrt(float64(((1 + m22) - m00) - m11)))
-	var num2 = 0.5 / num5
-	quaternion.X = (m20 + m02) * num2
-	quaternion.Y = (m21 + m12) * num2
-	quaternion.Z = 0.5 * num5
-	quaternion.W = (m01 - m10) * num2
-	return quaternion
-}
-*/
