@@ -32,6 +32,7 @@ var (
 	cmd               string
 	filter            string
 	resourceDirectory string
+	port              int
 	globFilter        glob.Glob
 	dirs              arrayFlags
 	args              arrayFlags
@@ -63,19 +64,19 @@ func watchFiles() {
 							lastTime = now
 							current = cmd
 							current.Wait()
-                            client.Broadcast(payloadEvent{ Event: "BuildSuccess", Asset: absFile })
-                            log.Println("Build Complete")
+							client.Broadcast(payloadEvent{Event: "BuildSuccess", Asset: absFile})
+							log.Println("Build Complete")
 						} else {
-                            client.Broadcast(payloadEvent{ Event: "BuildFailure", Asset: absFile })
+							client.Broadcast(payloadEvent{Event: "BuildFailure", Asset: absFile})
 							log.Println("Build Failed", err)
 						}
 
 						//Clear the current out
 						current = nil
-                    } else {                        
-                        client.Broadcast(payloadEvent{ Event: "AssetUpdated", Asset: absFile })
-                    }
-                    
+					} else {
+						client.Broadcast(payloadEvent{Event: "AssetUpdated", Asset: absFile})
+					}
+
 				}
 			}
 
@@ -94,6 +95,7 @@ func main() {
 	flag.StringVar(&cmd, "cmd", "go build", "The command that will be executed when a change has been discovered")
 	flag.StringVar(&filter, "filter", "*.go", "Filters the files that are modified")
 	flag.StringVar(&resourceDirectory, "resources", "./resources/", "Resource Directory")
+	flag.IntVar(&port, "port", 8090, "Port to host the webserver on")
 	flag.Var(&args, "args", "Arguments for the command")
 	flag.Var(&dirs, "dir", "Folders to listen for changes.")
 	flag.Parse()
@@ -127,9 +129,9 @@ func main() {
 
 	//Listens
 	client = &wsclient{}
+	log.Println("Serving on: ", port)
 	http.HandleFunc("/listen", client.handle)
-
-	http.ListenAndServe(":8090", nil)
+	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 }
 
 // runCommand runs the command with given name and arguments. It copies the

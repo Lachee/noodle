@@ -5,5 +5,13 @@
     },
     "go.vetFlags": [
         "-composites=false",
-    ]
+    ],
+    "[go]": {
+        "editor.insertSpaces": false,
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": true
+        }
+    }
+    
 }
