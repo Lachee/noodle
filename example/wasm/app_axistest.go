@@ -48,7 +48,14 @@ func (app *AxisTestApp) Start() bool {
 
 //Update occurs once a frame
 func (app *AxisTestApp) Update(dt float32) {
-	app.cameraAngleRadians += dt * 0.01 * 100
+	//app.cameraAngleRadians += dt * 0.01 * 100
+	if n.Input().GetKey(n.KeyArrowLeft) {
+		app.cameraAngleRadians -= dt * 0.01 * 100
+	}
+
+	if n.Input().GetKey(n.KeyArrowRight) {
+		app.cameraAngleRadians += dt * 0.01 * 100
+	}
 }
 
 //Render occurs when the screen needs updating

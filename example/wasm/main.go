@@ -15,8 +15,8 @@ func main() {
 	//app = &SpriteApp{}
 	//app = &UIApp{}
 	//app = &NineSliceApp{}
-	app = &FontApp{}
-	//app = &AxisTestApp{}
+	//app = &FontApp{}
+	app = &AxisTestApp{}
 
 	//This is blocking. Everything after this happens in the application
 	// It will return an exit code
