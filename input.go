@@ -303,3 +303,8 @@ func (i *InputHandler) GetAxis2D(negHorizontalKey, posHorizontalKey, negVertical
 	axis := Vector2{i.GetAxis(negHorizontalKey, posHorizontalKey), i.GetAxis(negVerticalKey, posVerticalKey)}
 	return axis.Normalize()
 }
+
+//Cursor updates the canvas cursor style. Set to 'none' if drawing custom cursors.
+func (i *InputHandler) Cursor(cursor string) {
+	canvas.Get("style").Set("cursor", cursor)
+}
