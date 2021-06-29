@@ -166,6 +166,7 @@ func RequestRedraw() {
 
 //Exit the application
 func Exit() {
+	log.Println("Exiting...")
 	awaiter <- 1
 }
 
