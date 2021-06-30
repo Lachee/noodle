@@ -41,7 +41,8 @@ func NewSpriteRenderer() *SpriteRenderer {
 
 	//Prepare the shader
 	var shaderError error
-	b.shader, shaderError = LoadShader(spriteRendererVertCode, spriteRendererFragCode)
+	//b.shader, shaderError = LoadShader(spriteRendererVertCode, spriteRendererFragCode)
+	b.shader, shaderError = LoadShaderFromURL("resources/shader/sprite.vert", "resources/shader/sprite.frag")
 	if shaderError != nil {
 		log.Fatalln("Failed to compile batch shader!", shaderError)
 		return nil
