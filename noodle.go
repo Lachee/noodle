@@ -54,6 +54,11 @@ func GetFrameCount() int64 { return frameCount }
 //DT returns a less accurate version of GetDeltaTime, for all your 32bit mathmatic needs.
 func DT() float32 { return float32(deltaTime) }
 
+//Canvas gets the current canvas object. It's not recommended to deal with canvas directly
+func Canvas() *js.Value {
+	return &canvas
+}
+
 //Input returns the current input handler
 func Input() *InputHandler {
 	return inputHandler
