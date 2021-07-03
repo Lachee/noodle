@@ -100,7 +100,7 @@ func (gl *WebGL) CompileShader(shader WebGLShader) error {
 
 	if !gl.GetShaderParameter(shader, GlCompileStatus).Bool() {
 		err := errors.New(gl.GetShaderInfoLog(shader))
-		log.Println("Failed to compile shader", err)
+		reportError("Failed to compile shader", err)
 		return err
 	}
 

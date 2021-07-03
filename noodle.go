@@ -79,7 +79,7 @@ func Run(application Application) int {
 
 	//Setup the animation frame
 	if !app.Start() {
-		log.Println("Failed to start the application")
+		reportError("Failed to start the application", nil)
 		return 0
 	}
 
@@ -203,4 +203,27 @@ func onRequestAnimationFrame(this js.Value, args []js.Value) interface{} {
 
 	//Return nil to JS
 	return nil
+}
+
+//reportError logs the error message and additionally shows on screen
+func reportError(message string, err error) {
+	log.Println(message, err)
+
+	bounding := canvas.Call("getBoundingClientRect")
+
+	// Create container
+	element := document.Call("createElement", "div")
+	document.Get("body").Call("appendChild", element)
+
+	// Set element style
+	style := element.Get("style")
+	style.Set("position", "absolute")
+	style.Set("left", bounding.Get("left"))
+	style.Set("top", bounding.Get("top"))
+
+	// Set text
+	element.Set("innerText", message)
+
+	//document = js.Global().Get("document")
+	//canvas = document.Call("getElementById", "gocanvas")
 }
