@@ -22,6 +22,8 @@ var (
 
 	document        js.Value
 	canvas          js.Value
+	errBox          js.Value
+	hasErrBox       = false
 	frameRenderFunc js.Func
 	inputHandler    *InputHandler
 	app             Application
@@ -71,6 +73,8 @@ func Run(application Application) int {
 	//Prepare the everything
 	document = js.Global().Get("document")
 	canvas = document.Call("getElementById", "gocanvas")
+	canvas.Get("classList").Call("add", "noodle-canvas")
+
 	GL = newWebGL(canvas)
 	inputHandler = newInput()
 
@@ -209,21 +213,38 @@ func onRequestAnimationFrame(this js.Value, args []js.Value) interface{} {
 func reportError(message string, err error) {
 	log.Println(message, err)
 
-	bounding := canvas.Call("getBoundingClientRect")
+	if !hasErrBox {
+		hasErrBox = true
 
-	// Create container
-	element := document.Call("createElement", "div")
-	document.Get("body").Call("appendChild", element)
+		// Create container
+		errBox = document.Call("createElement", "div")
+		errBox.Get("classList").Call("add", "noodle-errors")
+		document.Get("body").Call("appendChild", errBox)
 
-	// Set element style
-	style := element.Get("style")
-	style.Set("position", "absolute")
-	style.Set("left", bounding.Get("left"))
-	style.Set("top", bounding.Get("top"))
+		// Set element style
+		bounding := canvas.Call("getBoundingClientRect")
+		style := errBox.Get("style")
+		style.Set("position", "absolute")
+		style.Set("left", bounding.Get("left"))
+		style.Set("top", bounding.Get("top"))
+		style.Set("width", bounding.Get("width"))
+		style.Set("height", bounding.Get("height"))
+		style.Set("overflow", bounding.Get("scroll"))
+	}
 
-	// Set text
-	element.Set("innerText", message)
+	// Append the error
+	errorElement := document.Call("createElement", "div")
+	errorElement.Get("classList").Call("add", "noodle-error")
 
-	//document = js.Global().Get("document")
-	//canvas = document.Call("getElementById", "gocanvas")
+	errorMessage := document.Call("createElement", "div")
+	errorMessage.Get("classList").Call("add", "noodle-error-message")
+	errorMessage.Set("innerText", message)
+
+	errorStack := document.Call("createElement", "div")
+	errorStack.Get("classList").Call("add", "noodle-error-stack")
+	errorStack.Set("innerText", err.Error())
+
+	errorElement.Call("appendChild", errorMessage)
+	errorElement.Call("appendChild", errorStack)
+	errBox.Call("appendChild", errorElement)
 }
