@@ -20,7 +20,7 @@ func main() {
 
 	//This is blocking. Everything after this happens in the application
 	// It will return an exit code
-	exitCode := noodle.Run(app)
+	exitCode := noodle.Run(app, "#gocanvas")
 	log.Println("Exited with code", exitCode)
 }
 

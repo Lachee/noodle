@@ -68,12 +68,12 @@ func Input() *InputHandler {
 }
 
 //Run setups the WebGL context and runs the application. It is blocking and returns an exit code if Exit() is ever called.
-func Run(application Application) int {
+func Run(application Application, canvasSelector string) int {
 	app = application
 
 	//Prepare the everything
 	document = js.Global().Get("document")
-	canvas = document.Call("getElementById", "gocanvas")
+	canvas = document.Call("querySelector", canvasSelector)
 	canvas.Get("classList").Call("add", "noodle-canvas")
 
 	GL = newWebGL(canvas)
