@@ -133,6 +133,8 @@ type InputHandler struct {
 
 	buttonStates [5]keyState
 	keyStates    map[Key]keyState
+
+	normalizeCoordinates bool //normalizeCoordinates will map mouse position within the bounding box. Values will still be pixels.
 }
 
 func newInput() *InputHandler {

@@ -237,6 +237,17 @@ func (gl *WebGL) Resize() (int, int) {
 	return width, height
 }
 
+//Bounding box of the canvas. Note the bounding box will not exactly match Width and Height as they are given in exact pixels.
+func (gl *WebGL) BoundingBox() Rectangle {
+	bounding := gl.canvas.Call("getBoundingClientRect")
+	return Rectangle{
+		float32(bounding.Get("left").Float()),
+		float32(bounding.Get("top").Float()),
+		float32(bounding.Get("width").Float()),
+		float32(bounding.Get("height").Float()),
+	}
+}
+
 //Width of the canvas in pixels
 func (gl *WebGL) Width() int { return gl.canvas.Get("width").Int() }
 

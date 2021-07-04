@@ -67,18 +67,6 @@ func Input() *InputHandler {
 	return inputHandler
 }
 
-//BoundingBox returns the canvas bounding box
-func BoundingBox() Rectangle {
-	//TODO: When the canvas is its own dom, wrap this up in a call to that
-	bounding := canvas.Call("getBoundingClientRect")
-	return Rectangle{
-		float32(bounding.Get("left").Float()),
-		float32(bounding.Get("top").Float()),
-		float32(bounding.Get("width").Float()),
-		float32(bounding.Get("height").Float()),
-	}
-}
-
 //Run setups the WebGL context and runs the application. It is blocking and returns an exit code if Exit() is ever called.
 func Run(application Application) int {
 	app = application
@@ -103,9 +91,11 @@ func Run(application Application) int {
 	//Cursor Moved
 	onMouseChangeEvent := AddEventListener("mousemove", func(this js.Value, args []js.Value) interface{} {
 		evt := args[0]
-		x := evt.Get("offsetX").Int()
-		y := evt.Get("offsetY").Int()
-		inputHandler.setMousePosition(x, y)
+
+		bounding := GL.BoundingBox()
+		x := float32(evt.Get("offsetX").Float()) - bounding.X
+		y := float32(evt.Get("offsetY").Float()) - bounding.Y
+		inputHandler.setMousePosition(int(x), int(y))
 		return nil
 	})
 	defer onMouseChangeEvent.Release()
@@ -115,7 +105,6 @@ func Run(application Application) int {
 		evt := args[0]
 		button := evt.Get("button").Int()
 		inputHandler.setMouseUp(button)
-
 		return nil
 	})
 	defer onMouseUpEvent.Release()
@@ -145,8 +134,6 @@ func Run(application Application) int {
 		if evt.Get("repeat").Bool() {
 			return nil
 		}
-
-		//Set the key code
 		key := evt.Get("keyCode").Int()
 		inputHandler.setKeyDown(key)
 		return nil
@@ -234,7 +221,7 @@ func Error(message string, err error) {
 		document.Get("body").Call("appendChild", errBox)
 
 		// Set element style
-		bounding := BoundingBox()
+		bounding := GL.BoundingBox()
 		style := errBox.Get("style")
 		style.Set("position", "absolute")
 		style.Set("left", bounding.X)
