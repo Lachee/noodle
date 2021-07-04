@@ -93,8 +93,8 @@ func Run(application Application) int {
 		evt := args[0]
 
 		bounding := GL.BoundingBox()
-		x := float32(evt.Get("offsetX").Float()) - bounding.X
-		y := float32(evt.Get("offsetY").Float()) - bounding.Y
+		x := float32(evt.Get("pageX").Float()) - bounding.X
+		y := float32(evt.Get("pageY").Float()) - bounding.Y
 		inputHandler.setMousePosition(int(x), int(y))
 		return nil
 	})
@@ -160,7 +160,7 @@ func Run(application Application) int {
 	return <-awaiter
 }
 
-//AddEventListener adds a new event listener to the canvas. It will return a JS function that needs to be Released() when its no longer required.
+//AddEventListener adds a new event listener to the document. It will return a JS function that needs to be Released() when its no longer required.
 func AddEventListener(event string, fn func(this js.Value, args []js.Value) interface{}) js.Func {
 	jsfunc := js.FuncOf(fn)
 	document.Call("addEventListener", event, jsfunc)
