@@ -83,7 +83,7 @@ func Run(application Application) int {
 
 	//Setup the animation frame
 	if !app.Start() {
-		reportError("Failed to start the application", nil)
+		Error("Failed to start the application", nil)
 		return 0
 	}
 
@@ -209,8 +209,8 @@ func onRequestAnimationFrame(this js.Value, args []js.Value) interface{} {
 	return nil
 }
 
-//reportError logs the error message and additionally shows on screen
-func reportError(message string, err error) {
+//Error logs the error message and additionally shows on screen
+func Error(message string, err error) {
 	log.Println(message, err)
 
 	if !hasErrBox {

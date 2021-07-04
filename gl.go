@@ -100,7 +100,7 @@ func (gl *WebGL) CompileShader(shader WebGLShader) error {
 
 	if !gl.GetShaderParameter(shader, GlCompileStatus).Bool() {
 		err := errors.New(gl.GetShaderInfoLog(shader))
-		reportError("Failed to compile shader", err)
+		Error("Failed to compile shader", err)
 		return err
 	}
 
@@ -146,6 +146,7 @@ func (gl *WebGL) LinkProgram(shaderProgram WebGLShaderProgram) error {
 
 	if !gl.GetProgramParameter(shaderProgram, GlLinkStatus).Bool() {
 		err := errors.New(gl.GetProgramInfoLog(shaderProgram))
+		Error("Failed to link program", err)
 		return err
 	}
 

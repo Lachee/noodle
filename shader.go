@@ -1,5 +1,10 @@
 package noodle
 
+import (
+	"errors"
+	"strings"
+)
+
 //Shader holds the shaders
 type Shader struct {
 	program WebGLShaderProgram
@@ -11,13 +16,53 @@ func LoadShaderFromURL(vertURL, fragURL string) (*Shader, error) {
 	//Load the vertext shader
 	vertCode, err := DownloadString(vertURL)
 	if err != nil {
+		Error("Failed to download vertex shader", err)
 		return nil, err
 	}
 
 	//Load the frag shader
 	fragCode, err := DownloadString(fragURL)
+	if err != nil {
+		Error("Failed to download fragment shader", err)
+		return nil, err
+	}
 
 	return LoadShader(vertCode, fragCode)
+}
+
+//LoadShaderFromCombinedURL downloads a single file and splits it up into the fragment and vertex shader from //vert: and //frag: tags
+func LoadShaderFromCombinedURL(url string) (*Shader, error) {
+	str, err := DownloadString(url)
+	if err != nil {
+		Error("Failed to download combined shader", err)
+		return nil, err
+	}
+
+	// Prepare the frags
+	var fragShaderCode, vertShaderCode string
+	indexOfVert := strings.LastIndex(str, "//vert:")
+	if indexOfVert < 0 {
+		err := errors.New("cannot find vert tag")
+		Error("Invalid combined shader, missing vert.", err)
+		return nil, err
+	}
+	indexOfFrag := strings.LastIndex(str, "//frag:")
+	if indexOfFrag < 0 {
+		err := errors.New("cannot find frag tag")
+		Error("Invalid combined shader, missing frag.", err)
+		return nil, err
+	}
+
+	if indexOfVert < indexOfFrag {
+		vertShaderCode = str[indexOfVert:indexOfFrag]
+		fragShaderCode = str[indexOfFrag:]
+	} else {
+		fragShaderCode = str[indexOfFrag:indexOfVert]
+		vertShaderCode = str[indexOfVert:]
+	}
+
+	// Load the shader
+	return LoadShader(vertShaderCode, fragShaderCode)
 }
 
 //LoadShader loads a shader from code

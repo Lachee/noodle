@@ -131,6 +131,8 @@ func (app *RotatingCubeApp) Render() {
 
 	//Create the model matrix
 	modelMatrix := n.NewMatrixTranslate(Vector3{0, 0, 0})
+	modelMatrix = modelMatrix.RotateX((float32)(n.GetFrameTime()))
+	modelMatrix = modelMatrix.RotateY((float32)(n.GetFrameTime()))
 
 	//Set the Unfiform
 	viewProjectionModelMatrix := viewProjectionMatrix.Multiply(modelMatrix)
