@@ -58,12 +58,25 @@ func DT() float32 { return float32(deltaTime) }
 
 //Canvas gets the current canvas object. It's not recommended to deal with canvas directly
 func Canvas() *js.Value {
+	//TODO: Return a 'dom' element of the canvas
 	return &canvas
 }
 
 //Input returns the current input handler
 func Input() *InputHandler {
 	return inputHandler
+}
+
+//BoundingBox returns the canvas bounding box
+func BoundingBox() Rectangle {
+	//TODO: When the canvas is its own dom, wrap this up in a call to that
+	bounding := canvas.Call("getBoundingClientRect")
+	return Rectangle{
+		float32(bounding.Get("left").Float()),
+		float32(bounding.Get("top").Float()),
+		float32(bounding.Get("width").Float()),
+		float32(bounding.Get("height").Float()),
+	}
 }
 
 //Run setups the WebGL context and runs the application. It is blocking and returns an exit code if Exit() is ever called.
@@ -93,7 +106,6 @@ func Run(application Application) int {
 		x := evt.Get("offsetX").Int()
 		y := evt.Get("offsetY").Int()
 		inputHandler.setMousePosition(x, y)
-
 		return nil
 	})
 	defer onMouseChangeEvent.Release()
@@ -222,14 +234,14 @@ func Error(message string, err error) {
 		document.Get("body").Call("appendChild", errBox)
 
 		// Set element style
-		bounding := canvas.Call("getBoundingClientRect")
+		bounding := BoundingBox()
 		style := errBox.Get("style")
 		style.Set("position", "absolute")
-		style.Set("left", bounding.Get("left"))
-		style.Set("top", bounding.Get("top"))
-		style.Set("width", bounding.Get("width"))
-		style.Set("height", bounding.Get("height"))
-		style.Set("overflow", bounding.Get("scroll"))
+		style.Set("left", bounding.X)
+		style.Set("top", bounding.Y)
+		style.Set("width", bounding.Width)
+		style.Set("height", bounding.Height)
+		style.Set("overflow", "scroll")
 	}
 
 	// Append the error
