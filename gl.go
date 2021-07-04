@@ -367,7 +367,7 @@ func (gl *WebGL) Uniform2f(location WebGLUniformLocation, value, value2 float32)
 //Uniform2fv specifies values of uniform variables
 func (gl *WebGL) Uniform2fv(location WebGLUniformLocation, value []float32) {
 	slice := sliceToTypedArray(value)
-	gl.context.Call("Uniform2fv", location, slice)
+	gl.context.Call("uniform2fv", location, slice)
 }
 
 //Uniform2i specifies values of uniform variables
