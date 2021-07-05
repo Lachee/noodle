@@ -42,6 +42,8 @@ var (
 
 	//AlwaysDraw continously draws
 	AlwaysDraw = true
+
+	antiAlias = true
 )
 
 //GetFrameTime returns the time the last frame was rendered
@@ -67,6 +69,17 @@ func Input() *InputHandler {
 	return inputHandler
 }
 
+//SetAntiAlias sets the anti-alias state
+func SetAntiAlias(state bool) {
+	antiAlias = state
+	setGLContext()
+}
+
+//setGLContext sets the context reference
+func setGLContext() {
+	GL = newWebGL(antiAlias, canvas)
+}
+
 //Run setups the WebGL context and runs the application. It is blocking and returns an exit code if Exit() is ever called.
 func Run(application Application, canvasSelector string) int {
 	app = application
@@ -75,8 +88,8 @@ func Run(application Application, canvasSelector string) int {
 	document = js.Global().Get("document")
 	canvas = document.Call("querySelector", canvasSelector)
 	canvas.Get("classList").Call("add", "noodle-canvas")
+	setGLContext()
 
-	GL = newWebGL(canvas)
 	inputHandler = newInput()
 
 	//Prepare the awaiter
