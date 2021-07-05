@@ -313,6 +313,11 @@ func (tex *Texture) Bind() {
 	GL.BindTexture(tex.target, tex.texture)
 }
 
+//Unbind tells GL to stop using this texture
+func (tex *Texture) Unbind() {
+	GL.UnbindTexture(tex.target)
+}
+
 //SetSampler updates the texture sampler
 func (tex *Texture) SetSampler(sampler WebGLUniformLocation, textureIndex int) {
 	GL.ActiveTexture(GlTexture0 + textureIndex)
