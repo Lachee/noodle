@@ -35,7 +35,7 @@ type WebGL struct {
 func newWebGL(antiAlias bool, canvas js.Value) *WebGL {
 
 	//Get the GL context
-	contextStr := fmt.Sprintf("{ \"desynchronized\": %t, \", \"antialias\": %t }", false, true)
+	contextStr := fmt.Sprintf("{ \"desynchronized\": %t, \"antialias\": %t }", false, true)
 	contextOptions := js.Global().Get("JSON").Call("parse", contextStr)
 	context := canvas.Call("getContext", "webgl", contextOptions)
 	if context.IsUndefined() {
