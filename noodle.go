@@ -43,6 +43,9 @@ var (
 	//AlwaysDraw continously draws
 	AlwaysDraw = true
 
+	//MouseDraws determines if a frame will be rendered if the mouse moves
+	MouseDraws = false
+
 	antiAlias = true
 )
 
@@ -109,14 +112,11 @@ func Run(application Application, canvasSelector string) int {
 		x := float32(evt.Get("pageX").Float()) - bounding.X
 		y := float32(evt.Get("pageY").Float()) - bounding.Y
 		inputHandler.setMousePosition(int(x), int(y))
-		RequestRedraw()
 
 		//Prepare the view port and then render everything
-		width, height := GL.Resize()
-		GL.Viewport(0, 0, width, height)
-
-		//Clear the canvas
-		app.Render()
+		if MouseDraws {
+			Draw()
+		}
 
 		return nil
 	})
@@ -215,11 +215,8 @@ func onRequestAnimationFrame(this js.Value, args []js.Value) interface{} {
 	app.Update(float32(deltaTime))
 
 	//Prepare the view port and then render everything
-	width, height := GL.Resize()
-	GL.Viewport(0, 0, width, height)
-
-	//Clear the canvas
-	app.Render()
+	GL.Resize()
+	Draw()
 
 	//If we need to draw again, then do so
 	if AlwaysDraw {
@@ -228,6 +225,12 @@ func onRequestAnimationFrame(this js.Value, args []js.Value) interface{} {
 
 	//Return nil to JS
 	return nil
+}
+
+//Draw the application
+func Draw() {
+	GL.Viewport(0, 0, GL.Width(), GL.Height())
+	app.Render()
 }
 
 //Error logs the error message and additionally shows on screen
