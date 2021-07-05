@@ -2,6 +2,7 @@ package noodle
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"syscall/js"
 )
@@ -31,10 +32,11 @@ type WebGL struct {
 	targetWidth, targetHeight int
 }
 
-func newWebGL(canvas js.Value) *WebGL {
+func newWebGL(antiAlias bool, canvas js.Value) *WebGL {
 
 	//Get the GL context
-	contextOptions := js.Global().Get("JSON").Call("parse", "{ \"desynchronized\": true }")
+	contextStr := fmt.Sprintf("{ \"desynchronized\": %t, \", \"antialias\": %t }", false, true)
+	contextOptions := js.Global().Get("JSON").Call("parse", contextStr)
 	context := canvas.Call("getContext", "webgl", contextOptions)
 	if context.IsUndefined() {
 		context = canvas.Call("getContext", "experimental-webgl", contextOptions)
