@@ -109,6 +109,7 @@ func Run(application Application, canvasSelector string) int {
 		x := float32(evt.Get("pageX").Float()) - bounding.X
 		y := float32(evt.Get("pageY").Float()) - bounding.Y
 		inputHandler.setMousePosition(int(x), int(y))
+		RequestRedraw()
 		return nil
 	})
 	defer onMouseChangeEvent.Release()
