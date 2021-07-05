@@ -110,6 +110,14 @@ func Run(application Application, canvasSelector string) int {
 		y := float32(evt.Get("pageY").Float()) - bounding.Y
 		inputHandler.setMousePosition(int(x), int(y))
 		RequestRedraw()
+
+		//Prepare the view port and then render everything
+		width, height := GL.Resize()
+		GL.Viewport(0, 0, width, height)
+
+		//Clear the canvas
+		app.Render()
+
 		return nil
 	})
 	defer onMouseChangeEvent.Release()
