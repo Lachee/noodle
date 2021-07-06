@@ -389,6 +389,62 @@ func (gl *WebGL) Uniform2v(location WebGLUniformLocation, value Vector2) {
 	gl.context.Call("uniform2fv", location, tmp)
 }
 
+//Uniform3f specifies values of uniform variables
+func (gl *WebGL) Uniform3f(location WebGLUniformLocation, value, value2, value3 float32) {
+	gl.context.Call("uniform3f", location, value, value2, value3)
+}
+
+//Uniform3fv specifies values of uniform variables
+func (gl *WebGL) Uniform3fv(location WebGLUniformLocation, value []float32) {
+	slice := sliceToTypedArray(value)
+	gl.context.Call("uniform3fv", location, slice)
+}
+
+//Uniform3i specifies values of uniform variables
+func (gl *WebGL) Uniform3i(location WebGLUniformLocation, value, value2, value3 int) {
+	gl.context.Call("uniform3i", location, value, value2, value3)
+}
+
+//Uniform3iv specifies values of uniform variables
+func (gl *WebGL) Uniform3iv(location WebGLUniformLocation, value []int) {
+	slice := sliceToTypedArray(value)
+	gl.context.Call("uniform3iv", location, slice)
+}
+
+//Uniform3v is an alias of Uniform3fv but with Vector support
+func (gl *WebGL) Uniform3v(location WebGLUniformLocation, value Vector3) {
+	tmp := sliceToTypedArray([]float32((*value.DecomposePointer())[:]))
+	gl.context.Call("uniform3fv", location, tmp)
+}
+
+//Uniform4f specifies values of uniform variables
+func (gl *WebGL) Uniform4f(location WebGLUniformLocation, value, value2, value3, value4 float32) {
+	gl.context.Call("uniform4f", location, value, value2, value3, value4)
+}
+
+//Uniform4fv specifies values of uniform variables
+func (gl *WebGL) Uniform4fv(location WebGLUniformLocation, value []float32) {
+	slice := sliceToTypedArray(value)
+	gl.context.Call("uniform4fv", location, slice)
+}
+
+//Uniform4i specifies values of uniform variables
+func (gl *WebGL) Uniform4i(location WebGLUniformLocation, value, value2, value3, value4 int) {
+	gl.context.Call("uniform4i", location, value, value2, value3, value4)
+}
+
+//Uniform4iv specifies values of uniform variables
+func (gl *WebGL) Uniform4iv(location WebGLUniformLocation, value []int) {
+	slice := sliceToTypedArray(value)
+	gl.context.Call("uniform4iv", location, slice)
+}
+
+//Uniform4v is an alias of Uniform4fv but with Vector support
+func (gl *WebGL) Uniform4v(location WebGLUniformLocation, value Vector4) {
+	tmp := sliceToTypedArray([]float32((*value.DecomposePointer())[:]))
+	gl.context.Call("uniform4fv", location, tmp)
+}
+
 //UniformMatrix4fv specify matrix values for uniform variables.
 // Transpose is excluded as it always has to be false anyways.
 func (gl *WebGL) UniformMatrix4fv(location WebGLUniformLocation, matrix Matrix) {
