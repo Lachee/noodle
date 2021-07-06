@@ -135,11 +135,14 @@ func LoadImage(url string) (*Image, error) {
 		return nil, err
 	}
 
+	return LoadImageJS(img), nil
+}
+
+//LoadImageJS loads image directly from a JS value. This is used when you have got a DOM element already.
+func LoadImageJS(img js.Value) *Image {
 	width := img.Get("width").Int()
 	height := img.Get("height").Int()
-
-	//Finish
-	return &Image{img, GlRGBA, width, height}, nil
+	return &Image{img, GlRGBA, width, height}
 }
 
 //LoadImageRGBA loads a go RGBA image
