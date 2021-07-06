@@ -1,5 +1,7 @@
 package noodle
 
+import "unsafe"
+
 /*
 Rectangle Structure
 author: Lachee
@@ -121,3 +123,9 @@ func (r Rectangle) LerpPosition(pos Vector2, amount float32) Rectangle {
 		Height: r.Height,
 	}
 }
+
+//DecomposePointer the rectangle into a slice of floats using unsafe matrix trickery
+func (r Rectangle) DecomposePointer() *[4]float32 { return (*[4]float32)(unsafe.Pointer(&r)) }
+
+//Decompose the rectangle into a new slice of floats.
+func (r Rectangle) Decompose() []float32 { return []float32{r.X, r.Y, r.Width, r.Height} }
