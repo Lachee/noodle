@@ -178,6 +178,11 @@ func (i *Image) Height() int {
 	return i.height
 }
 
+//Size creates a float vector from the width and height
+func (i *Image) Size() Vector2 {
+	return NewVector2i(i.width, i.height)
+}
+
 //IsPowerOf2 checks if the image is a square power
 func (i *Image) IsPowerOf2() bool {
 	w := i.Width()
@@ -253,6 +258,11 @@ func (tex *Texture) Width() int { return tex.width }
 
 //Height gets the width of the texture
 func (tex *Texture) Height() int { return tex.height }
+
+//Size creates a float vector from the width and height
+func (tex *Texture) Size() Vector2 {
+	return NewVector2i(tex.width, tex.height)
+}
 
 //Texture returns this texture. Exists for compatability with the UVTile
 func (tex *Texture) Texture() *Texture { return tex }
