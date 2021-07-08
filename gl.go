@@ -482,3 +482,15 @@ func (gl *WebGL) Call(m string, args ...interface{}) js.Value {
 func (gl *WebGL) IsUndefined() bool {
 	return gl.context.IsUndefined()
 }
+
+//Error returns the WebGL error (if available)
+func (gl *WebGL) Error() error {
+	result := gl.context.Call("getError")
+	if result.Int() == GlNoError {
+		return nil
+	}
+
+	err := errors.New("GL ERROR: " + fmt.Sprint(result.Int()))
+	Error("WebGL Error", err)
+	return err
+}
