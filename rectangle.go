@@ -124,6 +124,15 @@ func (r Rectangle) LerpPosition(pos Vector2, amount float32) Rectangle {
 	}
 }
 
+//Contains checks if the point is within the rectangle
+func (r Rectangle) Contains(point Vector2) bool {
+	return point.X > r.X && point.X < (r.X+r.Width) && point.Y > r.Y && point.Y < (r.Y+r.Height)
+}
+
+func (r Rectangle) Intersects(r2 Rectangle) bool {
+	return (r.X < r2.X+r2.Width) && (r.X+r.Width > r2.X) && (r.Y < r2.Y+r2.Height) && (r.Y+r.Height > r2.Y)
+}
+
 //DecomposePointer the rectangle into a slice of floats using unsafe matrix trickery
 func (r Rectangle) DecomposePointer() *[4]float32 { return (*[4]float32)(unsafe.Pointer(&r)) }
 
