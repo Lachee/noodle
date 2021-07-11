@@ -83,8 +83,8 @@ func sliceToByteSlice(s interface{}) []byte {
 	}
 }
 
-//sliceToTypedArray converts a slice of values (a buffer) into a JavaScript equivilent typed array
-func sliceToTypedArray(s interface{}) js.Value {
+//SliceToTypedArray converts a slice of values (a buffer) into a JavaScript equivilent typed array
+func SliceToTypedArray(s interface{}) js.Value {
 	switch s := s.(type) {
 	case js.Value:
 		return s

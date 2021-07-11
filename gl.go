@@ -76,13 +76,13 @@ func (gl *WebGL) BindBuffer(target GLEnum, buffer WebGLBuffer) {
 
 //BufferData sets the data of a buffer
 func (gl *WebGL) BufferData(target GLEnum, data interface{}, usage GLEnum) {
-	values := sliceToTypedArray(data)
+	values := SliceToTypedArray(data)
 	gl.context.Call("bufferData", target, values, usage)
 }
 
 //BufferSubData updates a subset of a buffer object's data store.
 func (gl *WebGL) BufferSubData(target GLEnum, offset int, data interface{}) {
-	values := sliceToTypedArray(data)
+	values := SliceToTypedArray(data)
 	gl.context.Call("bufferSubData", target, offset, values)
 }
 
@@ -346,7 +346,7 @@ func (gl *WebGL) Uniform1f(location WebGLUniformLocation, value float32) {
 
 //Uniform1fv specifies values of uniform variables
 func (gl *WebGL) Uniform1fv(location WebGLUniformLocation, value []float32) {
-	slice := sliceToTypedArray(value)
+	slice := SliceToTypedArray(value)
 	gl.context.Call("uniform1fv", location, slice)
 }
 
@@ -357,7 +357,7 @@ func (gl *WebGL) Uniform1i(location WebGLUniformLocation, value int) {
 
 //Uniform1iv specifies values of uniform variables
 func (gl *WebGL) Uniform1iv(location WebGLUniformLocation, value []int) {
-	slice := sliceToTypedArray(value)
+	slice := SliceToTypedArray(value)
 	gl.context.Call("uniform1iv", location, slice)
 }
 
@@ -368,7 +368,7 @@ func (gl *WebGL) Uniform2f(location WebGLUniformLocation, value, value2 float32)
 
 //Uniform2fv specifies values of uniform variables
 func (gl *WebGL) Uniform2fv(location WebGLUniformLocation, value []float32) {
-	slice := sliceToTypedArray(value)
+	slice := SliceToTypedArray(value)
 	gl.context.Call("uniform2fv", location, slice)
 }
 
@@ -379,13 +379,13 @@ func (gl *WebGL) Uniform2i(location WebGLUniformLocation, value, value2 int) {
 
 //Uniform2iv specifies values of uniform variables
 func (gl *WebGL) Uniform2iv(location WebGLUniformLocation, value []int) {
-	slice := sliceToTypedArray(value)
+	slice := SliceToTypedArray(value)
 	gl.context.Call("uniform2iv", location, slice)
 }
 
 //Uniform2v is an alias of Uniform2fv but with Vector support
 func (gl *WebGL) Uniform2v(location WebGLUniformLocation, value Vector2) {
-	tmp := sliceToTypedArray([]float32((*value.DecomposePointer())[:]))
+	tmp := SliceToTypedArray([]float32((*value.DecomposePointer())[:]))
 	gl.context.Call("uniform2fv", location, tmp)
 }
 
@@ -396,7 +396,7 @@ func (gl *WebGL) Uniform3f(location WebGLUniformLocation, value, value2, value3 
 
 //Uniform3fv specifies values of uniform variables
 func (gl *WebGL) Uniform3fv(location WebGLUniformLocation, value []float32) {
-	slice := sliceToTypedArray(value)
+	slice := SliceToTypedArray(value)
 	gl.context.Call("uniform3fv", location, slice)
 }
 
@@ -407,13 +407,13 @@ func (gl *WebGL) Uniform3i(location WebGLUniformLocation, value, value2, value3 
 
 //Uniform3iv specifies values of uniform variables
 func (gl *WebGL) Uniform3iv(location WebGLUniformLocation, value []int) {
-	slice := sliceToTypedArray(value)
+	slice := SliceToTypedArray(value)
 	gl.context.Call("uniform3iv", location, slice)
 }
 
 //Uniform3v is an alias of Uniform3fv but with Vector support
 func (gl *WebGL) Uniform3v(location WebGLUniformLocation, value Vector3) {
-	tmp := sliceToTypedArray([]float32((*value.DecomposePointer())[:]))
+	tmp := SliceToTypedArray([]float32((*value.DecomposePointer())[:]))
 	gl.context.Call("uniform3fv", location, tmp)
 }
 
@@ -424,7 +424,7 @@ func (gl *WebGL) Uniform4f(location WebGLUniformLocation, value, value2, value3,
 
 //Uniform4fv specifies values of uniform variables
 func (gl *WebGL) Uniform4fv(location WebGLUniformLocation, value []float32) {
-	slice := sliceToTypedArray(value)
+	slice := SliceToTypedArray(value)
 	gl.context.Call("uniform4fv", location, slice)
 }
 
@@ -435,13 +435,13 @@ func (gl *WebGL) Uniform4i(location WebGLUniformLocation, value, value2, value3,
 
 //Uniform4iv specifies values of uniform variables
 func (gl *WebGL) Uniform4iv(location WebGLUniformLocation, value []int) {
-	slice := sliceToTypedArray(value)
+	slice := SliceToTypedArray(value)
 	gl.context.Call("uniform4iv", location, slice)
 }
 
 //Uniform4v is an alias of Uniform4fv but with Vector support
 func (gl *WebGL) Uniform4v(location WebGLUniformLocation, value Vector4) {
-	tmp := sliceToTypedArray([]float32((*value.DecomposePointer())[:]))
+	tmp := SliceToTypedArray([]float32((*value.DecomposePointer())[:]))
 	gl.context.Call("uniform4fv", location, tmp)
 }
 
@@ -449,7 +449,7 @@ func (gl *WebGL) Uniform4v(location WebGLUniformLocation, value Vector4) {
 // Transpose is excluded as it always has to be false anyways.
 func (gl *WebGL) UniformMatrix4fv(location WebGLUniformLocation, matrix Matrix) {
 	buffer := matrix.DecomposePointer()
-	typedBuffer := sliceToTypedArray([]float32((*buffer)[:]))
+	typedBuffer := SliceToTypedArray([]float32((*buffer)[:]))
 	gl.context.Call("uniformMatrix4fv", location, false, typedBuffer)
 }
 
